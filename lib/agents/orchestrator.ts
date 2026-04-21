@@ -4,7 +4,7 @@ import { getUserFollowing, getRecentCastsByFids } from '@/lib/api/neynar';
 import type { RecentCast } from '@/lib/api/neynar';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
-const MODEL = 'google/gemini-flash-1.5';
+const MODEL = process.env.OPENROUTER_MODEL ?? 'google/gemini-2.0-flash-001';
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'StreamAlpha';
 
 // Server-side signal cache — survives within a single process lifetime.

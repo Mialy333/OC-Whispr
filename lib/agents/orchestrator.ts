@@ -41,9 +41,12 @@ interface OpenRouterMessage {
   content: string;
 }
 
-async function chat(messages: OpenRouterMessage[], maxTokens = 512): Promise<string> {
+async function chat(messages: OpenRouterMessage[], maxTokens = 512, temperature?: number): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
+
+  const body: Record<string, unknown> = { model: MODEL, messages, max_tokens: maxTokens };
+  if (temperature !== undefined) body.temperature = temperature;
 
   const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
     method: 'POST',
@@ -51,7 +54,7 @@ async function chat(messages: OpenRouterMessage[], maxTokens = 512): Promise<str
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: MODEL, messages, max_tokens: maxTokens }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -66,9 +69,16 @@ async function chat(messages: OpenRouterMessage[], maxTokens = 512): Promise<str
 function parseSignalsFromLLM(raw: string, protocols: Protocol[]): AlphaSignal[] {
   let parsed: unknown;
   try {
-    const match = raw.match(/\[[\s\S]*\]/);
-    parsed = match ? JSON.parse(match[0]) : [];
-  } catch {
+    // Strip markdown code fences before parsing
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const match = cleaned.match(/\[[\s\S]*\]/);
+    if (!match) {
+      console.error('[orchestrator] LLM raw (no array found):', raw.slice(0, 500));
+      return [];
+    }
+    parsed = JSON.parse(match[0]);
+  } catch (e) {
+    console.error('[orchestrator] JSON parse failed:', e, '— raw:', raw.slice(0, 500));
     return [];
   }
 
@@ -123,26 +133,35 @@ Rules:
 - Flag TVL change > 20% (up or down) as high severity
 - Flag fee or revenue surge > 50% as medium severity
 - Flag stablecoin peg deviation > 0.5% as high severity
-- Maximum 5 signals, ranked by severity (high first)
+- Ranked by severity (high first)
 - Be data-driven, no hype
 
-Respond with a JSON array only. Each element:
-{
-  "protocolName": string,
-  "title": string (max 60 chars),
-  "summary": string (max 120 chars),
-  "dataPoint": string (e.g. "TVL +42% in 24h"),
-  "severity": "high" | "medium" | "low"
-}`;
+Return ONLY a valid JSON array of exactly 5 objects, no markdown, no explanation, no code fences.
+Each object must have exactly these fields:
+{"protocolName":"string","title":"string max 60 chars","summary":"string max 120 chars","dataPoint":"string e.g. TVL +42% in 24h","severity":"high|medium|low"}`;
 
-  const userMessage = `Analyze these protocols and return anomalies:\n${JSON.stringify(protocolData, null, 2)}`;
+  const userMessage = `Analyze these protocols and return exactly 5 anomaly signals as a JSON array:\n${JSON.stringify(protocolData, null, 2)}`;
 
-  const raw = await chat([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userMessage },
-  ]);
+  async function fetchSignals(temperature?: number): Promise<AlphaSignal[]> {
+    const raw = await chat(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      1024,
+      temperature,
+    );
+    return parseSignalsFromLLM(raw, protocols);
+  }
 
-  const signals = parseSignalsFromLLM(raw, protocols);
+  let signals = await fetchSignals();
+
+  // Retry once at temperature 0 if we got fewer than 3 signals
+  if (signals.length < 3) {
+    console.warn(`[orchestrator] Only ${signals.length} signals parsed, retrying at temperature 0`);
+    signals = await fetchSignals(0);
+  }
+
   const sorted = signals.sort(
     (a, b) => severityScore(b) - severityScore(a)
   );

@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env.local
+.env
+tsconfig.tsbuildinfo
+farcaster-agent/credentials.json
+farcaster-agent/agent-service/.vercel/
+farcaster-agent/.env
+farcaster-agent/agent-service/.env

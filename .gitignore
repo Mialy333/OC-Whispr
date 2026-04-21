@@ -7,3 +7,4 @@ farcaster-agent/credentials.json
 farcaster-agent/agent-service/.vercel/
 farcaster-agent/.env
 farcaster-agent/agent-service/.env
+.vercel

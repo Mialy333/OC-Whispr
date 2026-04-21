@@ -1,1 +1,58 @@
 @import "tailwindcss";
+
+:root {
+  --bg-primary: #F5F0E8;
+  --bg-secondary: #EDE8DC;
+  --bg-terminal: #0A0A0A;
+  --text-primary: #0A0A0A;
+  --text-secondary: #3D3830;
+  --text-muted: #8C8479;
+  --accent-phosphore: #00FF41;
+  --accent-amber: #FFB800;
+  --accent-red: #E8322A;
+  --border: #C8C2B4;
+  --signal-high: #E8322A;
+  --signal-medium: #FFB800;
+  --signal-low: #00FF41;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #111111;
+  --bg-terminal: #0D1F0D;
+  --text-primary: #F5F0E8;
+  --text-secondary: #C8C2B4;
+  --text-muted: #8C8479;
+  --accent-phosphore: #00FF41;
+  --accent-amber: #FFB800;
+  --accent-red: #E8322A;
+  --border: #2A2A2A;
+  --signal-high: #E8322A;
+  --signal-medium: #FFB800;
+  --signal-low: #00FF41;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.grid-bg-phosphore {
+  background-image:
+    linear-gradient(rgba(0,255,65,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,65,0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}

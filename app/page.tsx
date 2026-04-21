@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import SignalCard from '@/components/SignalCard';
+import ThemeToggle from '@/components/ThemeToggle';
 import type { AlphaSignal } from '@/types';
 
 interface FeedResponse {
@@ -15,6 +16,31 @@ function truncateAddress(addr: string): string {
   if (addr.length < 10) return addr;
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
+
+function LiveClock() {
+  const [time, setTime] = useState('');
+  useEffect(() => {
+    const fmt = () => {
+      const now = new Date();
+      setTime(now.toLocaleString('en-US', {
+        month: 'short', day: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false,
+      }));
+    };
+    fmt();
+    const id = setInterval(fmt, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+      {time}
+    </span>
+  );
+}
+
+const mono = { fontFamily: 'var(--font-mono)' } as const;
+const display = { fontFamily: 'var(--font-display)' } as const;
 
 export default function Home() {
   const { ready, authenticated, login, logout, user } = usePrivy();
@@ -41,82 +67,126 @@ export default function Home() {
 
   if (!ready) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-300" />
+      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)' }}>
+        <span style={{ ...mono, fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>LOADING…</span>
       </main>
     );
   }
 
   if (!authenticated) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-zinc-950 px-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-zinc-100">Alpha Feed</h1>
-          <p className="mt-2 text-sm text-zinc-500">Live Web3/DeFi signals, curated by AI</p>
+      <main
+        className="grid-bg"
+        style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32, padding: 24, backgroundColor: 'var(--bg-primary)', position: 'relative' }}
+      >
+        <div style={{ position: 'absolute', top: 16, right: 16 }}>
+          <ThemeToggle />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ ...display, fontSize: 48, fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
+            STREAM ALPHA
+          </h1>
+          <p style={{ ...mono, fontSize: 14, color: 'var(--text-muted)', marginTop: 16, letterSpacing: '0.02em' }}>
+            AI-curated Web3 signals. Personalized by your network.
+          </p>
         </div>
         <button
           onClick={login}
-          className="rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white hover:bg-violet-500 active:scale-95 transition-transform"
+          style={{
+            ...mono,
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            backgroundColor: 'var(--text-primary)',
+            color: 'var(--bg-primary)',
+            border: 'none',
+            padding: '14px 36px',
+            cursor: 'pointer',
+            borderRadius: 0,
+            textTransform: 'uppercase' as const,
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
         >
-          Connect with Privy
+          CONNECT
         </button>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-6">
+    <main style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', padding: '0 24px 48px' }}>
       {/* Header */}
-      <div className="mx-auto max-w-lg">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-zinc-100">Alpha Feed</h1>
-          <div className="flex items-center gap-2">
-            {wallet && (
-              <span className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1 font-mono text-xs text-zinc-400">
-                {truncateAddress(wallet)}
-              </span>
-            )}
-            <button
-              onClick={logout}
-              className="rounded-lg border border-zinc-800 px-3 py-1 text-xs text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors"
-            >
-              Log out
-            </button>
-          </div>
+      <header style={{
+        maxWidth: 680,
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '16px 0',
+        borderBottom: '1px solid var(--border)',
+        gap: 12,
+      }}>
+        <span style={{ ...mono, fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-primary)', textTransform: 'uppercase' as const }}>
+          STREAM ALPHA
+        </span>
+        <LiveClock />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {wallet && (
+            <span style={{ ...mono, fontSize: 11, color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '2px 8px' }}>
+              {truncateAddress(wallet)}
+            </span>
+          )}
+          <ThemeToggle />
+          <button
+            onClick={logout}
+            style={{ ...mono, fontSize: 11, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border)', padding: '2px 8px', cursor: 'pointer', letterSpacing: '0.08em' }}
+          >
+            EXIT
+          </button>
         </div>
+      </header>
 
-        {/* Feed */}
-        <div className="mt-6 flex flex-col gap-4">
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-zinc-600 border-t-violet-400" />
-            </div>
-          )}
+      {/* Feed */}
+      <div style={{ maxWidth: 680, margin: '0 auto', paddingTop: 32 }}>
+        {loading && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+            <span style={{ ...mono, fontSize: 11, color: 'var(--accent-phosphore)', letterSpacing: '0.1em' }}>LOADING SIGNALS…</span>
+          </div>
+        )}
 
-          {error && (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
-              {error}
-            </p>
-          )}
+        {error && (
+          <p style={{ ...mono, fontSize: 11, color: 'var(--signal-high)', border: '1px solid var(--signal-high)', padding: '12px 16px' }}>
+            ERR: {error}
+          </p>
+        )}
 
-          {feed && !loading && (
-            <>
+        {feed && !loading && (
+          <>
+            {feed.free.length > 0 && (
+              <p style={{ ...mono, fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 12 }}>
+                LIVE SIGNALS
+              </p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {feed.free.map((signal) => (
                 <SignalCard key={signal.id} signal={signal} locked={false} fid={fid} />
               ))}
+            </div>
 
-              {feed.locked.length > 0 && (
-                <p className="px-1 font-mono text-xs text-zinc-600 uppercase tracking-widest">
-                  Locked · Cast to unlock
-                </p>
-              )}
-
+            {feed.locked.length > 0 && (
+              <p style={{ ...mono, fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' as const, margin: '24px 0 12px' }}>
+                LOCKED — CAST TO UNLOCK
+              </p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {feed.locked.map((signal) => (
                 <SignalCard key={signal.id} signal={signal} locked={true} fid={fid} />
               ))}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </main>
   );

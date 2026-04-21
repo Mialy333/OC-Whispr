@@ -1,9 +1,24 @@
 import type { Metadata } from 'next';
+import { Playfair_Display, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { checkEnv } from '@/lib/env';
 import Providers from './providers';
 
 checkEnv();
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const ibmMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
 
@@ -20,8 +35,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body><Providers>{children}</Providers></body>
+    <html lang="en" className={`${playfair.variable} ${ibmMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();` }} />
+      </head>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

@@ -11,30 +11,30 @@ interface Props {
 
 type UnlockState = 'idle' | 'loading-cast' | 'modal' | 'polling' | 'unlocked';
 
-const SEVERITY_BADGE: Record<AlphaSignal['severity'], string> = {
-  high: 'bg-red-500/20 text-red-400 border border-red-500/40',
-  medium: 'bg-amber-500/20 text-amber-400 border border-amber-500/40',
-  low: 'bg-blue-500/20 text-blue-400 border border-blue-500/40',
-};
-
-const SEVERITY_LABEL: Record<AlphaSignal['severity'], string> = {
-  high: 'HIGH',
-  medium: 'MED',
-  low: 'LOW',
+const SEVERITY_COLOR: Record<AlphaSignal['severity'], string> = {
+  high: 'var(--signal-high)',
+  medium: 'var(--signal-medium)',
+  low: 'var(--signal-low)',
 };
 
 const MAX_POLLS = 10;
 
+const mono = { fontFamily: 'var(--font-mono)' } as const;
+const display = { fontFamily: 'var(--font-display)' } as const;
+
 function Spinner() {
   return (
-    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+    <span style={{ ...mono, fontSize: 11, color: 'var(--accent-phosphore)', letterSpacing: '0.1em', animation: 'pulse 1s infinite' }}>
+      ■ ■ ■
+    </span>
   );
 }
 
 function LockIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 text-zinc-400">
-      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3A5.25 5.25 0 0 0 12 1.5Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 28, height: 28, color: 'var(--text-muted)' }}>
+      <rect x="3" y="11" width="18" height="11" rx="0" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
 }
@@ -46,6 +46,7 @@ export default function SignalCard({ signal, locked, fid }: Props) {
   const [keyword, setKeyword] = useState('');
   const [pollCount, setPollCount] = useState(0);
   const [error, setError] = useState('');
+  const [hovered, setHovered] = useState(false);
 
   const handleUnlockClick = async () => {
     setState('loading-cast');
@@ -82,9 +83,7 @@ export default function SignalCard({ signal, locked, fid }: Props) {
         body: JSON.stringify({ fid, signalId: signal.id, keyword }),
       });
       const data = await res.json();
-      if (data.verified) {
-        setState('unlocked');
-      }
+      if (data.verified) setState('unlocked');
     } catch {
       // network glitch — keep polling
     }
@@ -92,10 +91,7 @@ export default function SignalCard({ signal, locked, fid }: Props) {
 
   useEffect(() => {
     if (state !== 'polling') return;
-    if (pollCount >= MAX_POLLS) {
-      setState('modal');
-      return;
-    }
+    if (pollCount >= MAX_POLLS) { setState('modal'); return; }
     const timer = setTimeout(async () => {
       await pollVerify();
       setPollCount((c) => c + 1);
@@ -103,98 +99,218 @@ export default function SignalCard({ signal, locked, fid }: Props) {
     return () => clearTimeout(timer);
   }, [state, pollCount, pollVerify]);
 
+  const ts = new Date(signal.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const severityColor = SEVERITY_COLOR[signal.severity];
+  const isLocked = state !== 'unlocked';
+  const borderColor = hovered && isLocked ? 'var(--accent-phosphore)' : 'var(--border)';
+
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border bg-zinc-900 p-4 transition-all duration-500 ${
-        state === 'unlocked' ? 'border-zinc-700' : 'border-zinc-800'
-      }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        border: `1px solid ${borderColor}`,
+        backgroundColor: 'var(--bg-secondary)',
+        padding: 20,
+        transition: 'border-color 0.2s',
+      }}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="truncate font-mono text-xs text-zinc-500 uppercase tracking-widest">
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.12em', margin: '0 0 6px' }}>
             {signal.source} · {signal.protocolName}
           </p>
-          <h3 className="mt-1 text-sm font-semibold text-zinc-100 leading-snug">{signal.title}</h3>
+          <h3 style={{ ...display, fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.25 }}>
+            {signal.title}
+          </h3>
           {signal.boosted && (
-            <p className="mt-1 text-zinc-500" style={{ fontSize: '11px' }}>
-              👥 Followed by people you follow
+            <p style={{ ...mono, fontSize: 10, color: 'var(--accent-phosphore)', marginTop: 4, letterSpacing: '0.08em' }}>
+              ◆ TRENDING IN YOUR NETWORK
             </p>
           )}
         </div>
-        <span className={`shrink-0 rounded-md px-2 py-0.5 font-mono text-xs font-bold ${SEVERITY_BADGE[signal.severity]}`}>
-          {SEVERITY_LABEL[signal.severity]}
+        <span style={{
+          ...mono,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          color: severityColor,
+          border: `1px solid ${severityColor}`,
+          padding: '2px 8px',
+          flexShrink: 0,
+          textTransform: 'uppercase' as const,
+        }}>
+          {signal.severity}
         </span>
       </div>
 
-      <p className="mt-2 font-mono text-xs text-emerald-400">{signal.dataPoint}</p>
+      {/* Data point */}
+      <div style={{
+        marginTop: 12,
+        display: 'inline-block',
+        backgroundColor: 'var(--bg-terminal)',
+        padding: '4px 10px',
+        filter: isLocked ? 'blur(4px)' : 'none',
+        transition: 'filter 0.3s',
+        userSelect: isLocked ? 'none' : 'auto',
+      }}>
+        <span style={{ ...mono, fontSize: 13, color: 'var(--accent-phosphore)', letterSpacing: '0.04em' }}>
+          {signal.dataPoint}
+        </span>
+      </div>
 
-      {/* Body — blurred when locked */}
-      <div className="relative mt-3">
-        <p className={`text-sm text-zinc-300 leading-relaxed transition-all duration-300 ${state !== 'unlocked' ? 'blur-sm select-none' : ''}`}>
+      {/* Summary */}
+      <div style={{ position: 'relative', marginTop: 12 }}>
+        <p style={{
+          ...mono,
+          fontSize: 12,
+          color: 'var(--text-secondary)',
+          lineHeight: 1.6,
+          margin: 0,
+          filter: isLocked ? 'blur(6px)' : 'none',
+          transition: 'filter 0.3s',
+          userSelect: isLocked ? 'none' : 'auto',
+        }}>
           {signal.summary}
         </p>
 
-        {state !== 'unlocked' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+        {/* Locked overlay */}
+        {isLocked && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+          }}>
             {state === 'idle' && (
               <>
                 <LockIcon />
+                <span style={{ ...mono, fontSize: 11, color: 'var(--accent-phosphore)', letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
+                  CAST TO UNLOCK
+                </span>
                 <button
                   onClick={handleUnlockClick}
-                  className="mt-1 rounded-lg bg-violet-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-violet-500 active:scale-95 transition-transform"
+                  style={{
+                    ...mono,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    backgroundColor: 'var(--text-primary)',
+                    color: 'var(--bg-primary)',
+                    border: 'none',
+                    padding: '8px 20px',
+                    cursor: 'pointer',
+                    borderRadius: 0,
+                    textTransform: 'uppercase' as const,
+                  }}
                 >
-                  Unlock with a cast
+                  UNLOCK
                 </button>
               </>
             )}
-            {state === 'loading-cast' && (
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <Spinner /> Generating cast…
-              </div>
-            )}
+            {state === 'loading-cast' && <Spinner />}
             {state === 'polling' && (
-              <div className="flex flex-col items-center gap-2 text-xs text-zinc-400">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                 <Spinner />
-                <span>Waiting for cast…</span>
-                <span className="text-zinc-600">{MAX_POLLS - pollCount} checks left</span>
+                <span style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
+                  WAITING FOR CAST · {MAX_POLLS - pollCount} CHECKS LEFT
+                </span>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+      {/* Footer */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+        {error && <span style={{ ...mono, fontSize: 10, color: 'var(--signal-high)' }}>ERR: {error}</span>}
+        <span style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto', letterSpacing: '0.06em' }}>{ts}</span>
+      </div>
 
       {/* Unlock flash */}
       {state === 'unlocked' && locked && (
-        <div className="pointer-events-none absolute inset-0 animate-pulse rounded-xl bg-violet-500/10" />
+        <div style={{ pointerEvents: 'none', position: 'absolute', inset: 0, backgroundColor: 'rgba(0,255,65,0.04)', animation: 'pulse 1s' }} />
       )}
 
-      {/* Cast preview modal */}
+      {/* Cast modal */}
       {state === 'modal' && (
-        <div className="absolute inset-0 z-10 flex flex-col gap-3 rounded-xl bg-zinc-900/98 p-4 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Cast Preview</p>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          backgroundColor: 'var(--bg-secondary)',
+          padding: 20,
+          backdropFilter: 'blur(4px)',
+        }}>
+          <p style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' as const, margin: 0 }}>
+            CAST PREVIEW
+          </p>
           <textarea
             value={castText}
             onChange={(e) => setCastText(e.target.value)}
             maxLength={280}
             rows={4}
-            className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 p-3 font-mono text-xs text-zinc-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            style={{
+              ...mono,
+              fontSize: 12,
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--bg-terminal)',
+              border: '1px solid var(--border)',
+              padding: 12,
+              resize: 'none',
+              outline: 'none',
+              width: '100%',
+              lineHeight: 1.6,
+            }}
           />
-          <p className="text-right font-mono text-xs text-zinc-600">{castText.length}/280</p>
-          <div className="flex gap-2">
+          <p style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', textAlign: 'right', margin: 0 }}>
+            {castText.length}/280
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={() => setState('idle')}
-              className="flex-1 rounded-lg border border-zinc-700 py-2 text-xs text-zinc-400 hover:bg-zinc-800 transition-colors"
+              style={{
+                ...mono,
+                flex: 1,
+                fontSize: 11,
+                letterSpacing: '0.08em',
+                backgroundColor: 'transparent',
+                color: 'var(--text-muted)',
+                border: '1px solid var(--border)',
+                padding: '10px',
+                cursor: 'pointer',
+                borderRadius: 0,
+              }}
             >
-              Cancel
+              CANCEL
             </button>
             <button
               onClick={handleCastAndUnlock}
-              className="flex-1 rounded-lg bg-violet-600 py-2 text-xs font-semibold text-white hover:bg-violet-500 active:scale-95 transition-transform"
+              style={{
+                ...mono,
+                flex: 1,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                backgroundColor: 'var(--text-primary)',
+                color: 'var(--bg-primary)',
+                border: 'none',
+                padding: '10px',
+                cursor: 'pointer',
+                borderRadius: 0,
+                textTransform: 'uppercase' as const,
+              }}
             >
-              Cast &amp; Unlock
+              CAST & UNLOCK
             </button>
           </div>
         </div>

@@ -1,58 +1,92 @@
 @import "tailwindcss";
 
+/* ─── SA Design System — Apple '80s–'00s × Terminal ─── */
 :root {
-  --bg-primary: #F5F0E8;
-  --bg-secondary: #EDE8DC;
-  --bg-terminal: #0A0A0A;
-  --text-primary: #0A0A0A;
-  --text-secondary: #3D3830;
-  --text-muted: #8C8479;
-  --accent-phosphore: #00FF41;
-  --accent-amber: #FFB800;
-  --accent-red: #E8322A;
-  --border: #C8C2B4;
-  --signal-high: #E8322A;
-  --signal-medium: #FFB800;
-  --signal-low: #00FF41;
+  --sa-paper:        #F2ECDF;
+  --sa-paper-deep:   #E8DFCC;
+  --sa-platinum:     #E4DCC8;
+  --sa-platinum-hi:  #F5EFE2;
+  --sa-platinum-lo:  #C9BFA6;
+  --sa-rule:         #9E9378;
+  --sa-ink:          #1A1814;
+  --sa-graphite:     #3C3830;
+  --sa-ash:          #7A7364;
+  --sa-phosphor:     #1E7A3A;
+  --sa-phosphor-glow:#2AA84B;
+  --sa-aqua:         #3E6FA8;
+  --sa-aqua-deep:    #2A4F82;
+  --sa-amber:        #B0701C;
+  --sa-rust:         #A83A26;
+  --sa-terminal:     #0C1A0C;
+  --sa-terminal-green:#5BE36A;
+
+  /* Semantic aliases — light mode */
+  --bg-primary:      var(--sa-paper);
+  --bg-secondary:    var(--sa-platinum-hi);
+  --bg-terminal:     var(--sa-terminal);
+  --text-primary:    var(--sa-ink);
+  --text-secondary:  var(--sa-graphite);
+  --text-muted:      var(--sa-ash);
+  --accent-phosphore:var(--sa-phosphor-glow);
+  --accent-amber:    var(--sa-amber);
+  --accent-red:      var(--sa-rust);
+  --border:          var(--sa-rule);
+  --signal-high:     var(--sa-rust);
+  --signal-medium:   var(--sa-amber);
+  --signal-low:      var(--sa-phosphor);
 }
 
 [data-theme="dark"] {
-  --bg-primary: #0A0A0A;
-  --bg-secondary: #111111;
-  --bg-terminal: #0D1F0D;
-  --text-primary: #F5F0E8;
-  --text-secondary: #C8C2B4;
-  --text-muted: #8C8479;
-  --accent-phosphore: #00FF41;
-  --accent-amber: #FFB800;
-  --accent-red: #E8322A;
-  --border: #2A2A2A;
-  --signal-high: #E8322A;
-  --signal-medium: #FFB800;
-  --signal-low: #00FF41;
+  --bg-primary:      var(--sa-ink);
+  --bg-secondary:    #1F1B15;
+  --bg-terminal:     #0F1B10;
+  --text-primary:    var(--sa-paper-deep);
+  --text-secondary:  #C8BC9E;
+  --text-muted:      var(--sa-ash);
+  --accent-phosphore:var(--sa-phosphor-glow);
+  --accent-amber:    var(--sa-amber);
+  --accent-red:      var(--sa-rust);
+  --border:          #332E22;
+  --signal-high:     var(--sa-rust);
+  --signal-medium:   var(--sa-amber);
+  --signal-low:      var(--sa-phosphor);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-mono), 'IBM Plex Mono', ui-monospace, monospace;
   transition: background-color 0.2s, color 0.2s;
 }
 
+/* ─── Animations ─── */
+@keyframes sa-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes sa-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes sa-bar {
+  0%, 100% { transform: scaleY(0.3); opacity: 0.4; }
+  50%      { transform: scaleY(1);   opacity: 0.9; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes sa-unlock-flash {
+  0%   { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* ─── Utilities ─── */
 .grid-bg {
   background-image:
     linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 32px 32px;
-}
-
-.grid-bg-phosphore {
-  background-image:
-    linear-gradient(rgba(0,255,65,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,65,0.05) 1px, transparent 1px);
   background-size: 32px 32px;
 }

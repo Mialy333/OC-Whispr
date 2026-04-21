@@ -17,7 +17,7 @@ function truncateAddress(addr: string): string {
 }
 
 export default function Home() {
-  const { ready, authenticated, login, user } = usePrivy();
+  const { ready, authenticated, login, logout, user } = usePrivy();
   const [feed, setFeed] = useState<FeedResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,7 +26,7 @@ export default function Home() {
   const wallet = user?.wallet?.address ?? '';
 
   useEffect(() => {
-    if (!authenticated || !fid) return;
+    if (!authenticated) return;
     setLoading(true);
     setError('');
     fetch(`/api/feed?fid=${fid}`)
@@ -70,11 +70,19 @@ export default function Home() {
       <div className="mx-auto max-w-lg">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold text-zinc-100">Alpha Feed</h1>
-          {wallet && (
-            <span className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1 font-mono text-xs text-zinc-400">
-              {truncateAddress(wallet)}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {wallet && (
+              <span className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1 font-mono text-xs text-zinc-400">
+                {truncateAddress(wallet)}
+              </span>
+            )}
+            <button
+              onClick={logout}
+              className="rounded-lg border border-zinc-800 px-3 py-1 text-xs text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors"
+            >
+              Log out
+            </button>
+          </div>
         </div>
 
         {/* Feed */}

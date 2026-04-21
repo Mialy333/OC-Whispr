@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import type { Protocol, AlphaSignal } from '@/types';
 import { getUserFollowing, getRecentCastsByFids } from '@/lib/api/neynar';
 import type { RecentCast } from '@/lib/api/neynar';
+import { getStablecoinPrices, getRWATokens } from '@/lib/api/coingecko';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 const MODEL = process.env.OPENROUTER_MODEL ?? 'google/gemini-2.0-flash-001';
@@ -118,6 +119,11 @@ function parseSignalsFromLLM(raw: string, protocols: Protocol[]): AlphaSignal[] 
 export async function analyzeProtocols(protocols: Protocol[]): Promise<AlphaSignal[]> {
   if (protocols.length === 0) return [];
 
+  const [stablecoins, rwaTokens] = await Promise.allSettled([
+    getStablecoinPrices(),
+    getRWATokens(),
+  ]);
+
   const protocolData = protocols.map((p) => ({
     name: p.name,
     tvl: p.tvl,
@@ -126,6 +132,23 @@ export async function analyzeProtocols(protocols: Protocol[]): Promise<AlphaSign
     revenue24h: p.revenue24h,
     category: p.category,
   }));
+
+  const stablecoinData = stablecoins.status === 'fulfilled'
+    ? stablecoins.value.map((s) => ({
+        name: s.symbol,
+        priceUsd: s.priceUsd,
+        pegDeviation: s.pegDeviation,
+        category: 'stablecoin',
+      }))
+    : [];
+
+  const rwaData = rwaTokens.status === 'fulfilled'
+    ? rwaTokens.value.map((r) => ({
+        name: r.symbol,
+        priceUsd: r.priceUsd,
+        category: 'rwa',
+      }))
+    : [];
 
   const systemPrompt = `You are a Web3 alpha analyst. Detect anomalies in DeFi/RWA protocol data.
 
@@ -140,7 +163,16 @@ Return ONLY a valid JSON array of exactly 5 objects, no markdown, no explanation
 Each object must have exactly these fields:
 {"protocolName":"string","title":"string max 60 chars","summary":"string max 120 chars","dataPoint":"string e.g. TVL +42% in 24h","severity":"high|medium|low"}`;
 
-  const userMessage = `Analyze these protocols and return exactly 5 anomaly signals as a JSON array:\n${JSON.stringify(protocolData, null, 2)}`;
+  const userMessage = `Analyze these data sources and return exactly 5 anomaly signals as a JSON array:
+
+DeFiLlama protocols:
+${JSON.stringify(protocolData, null, 2)}
+
+CoinGecko stablecoins (flag pegDeviation > 0.005 as high severity):
+${JSON.stringify(stablecoinData, null, 2)}
+
+CoinGecko RWA tokens:
+${JSON.stringify(rwaData, null, 2)}`;
 
   async function fetchSignals(temperature?: number): Promise<AlphaSignal[]> {
     const raw = await chat(

@@ -8,7 +8,10 @@
       "Bash(rtk read *)",
       "Bash(git checkout *)",
       "Bash(rtk git *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(rtk grep *)",
+      "Bash(rtk curl *)",
+      "Bash(vercel logs *)"
     ]
   }
 }

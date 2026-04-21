@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not extract fid from frame message' }, { status: 400 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
     return NextResponse.redirect(`${appUrl}/frame?fid=${fid}`, 302);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

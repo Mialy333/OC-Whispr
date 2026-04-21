@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Valid fid and signalId are required' }, { status: 400 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
     if (!appUrl) {
       return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
     }
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Signal expired, refresh feed' }, { status: 404 });
     }
 
-    const castText = await generateCastSummary(signal);
+    const castText = (await generateCastSummary(signal)).trim();
     const frameUrl = `${appUrl}/frame?signal=${encodeURIComponent(signalId)}`;
     const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(frameUrl)}`;
     const keyword = castText.split(' ').slice(0, 6).join(' ');

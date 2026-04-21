@@ -5,7 +5,7 @@ import Providers from './providers';
 
 checkEnv();
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
 
 export const metadata: Metadata = {
   title: 'Stream Alpha',

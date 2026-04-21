@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify the cast was published by this fid
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
     if (!appUrl) {
       return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
     }

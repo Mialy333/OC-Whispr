@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiGuard } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,9 @@ interface NeynarFeedResponse {
 }
 
 export async function POST(req: NextRequest) {
+  const blocked = apiGuard(req);
+  if (blocked) return blocked;
+
   try {
     const body: VerifyBody = await req.json();
     const { fid, keyword } = body;

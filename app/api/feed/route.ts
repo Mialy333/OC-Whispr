@@ -4,6 +4,7 @@ import { analyzeProtocols, curateForUser } from '@/lib/agents/orchestrator';
 import {
   getCachedSignals, isCacheStale, ensureRefreshLoop,
 } from '@/lib/agents/signal-cache';
+import { apiGuard } from '@/lib/middleware';
 import type { AlphaSignal } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,9 @@ function parseFid(raw: string | null): number | null {
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
 export async function GET(req: NextRequest) {
-  // Start background refresh loop (idempotent — only starts once per process)
+  const blocked = apiGuard(req);
+  if (blocked) return blocked;
+
   ensureRefreshLoop();
 
   try {

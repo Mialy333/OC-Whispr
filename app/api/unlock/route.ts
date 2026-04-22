@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCastSummary } from '@/lib/agents/orchestrator';
 import { getSignalById } from '@/lib/agents/signal-cache';
+import { apiGuard } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,9 @@ interface UnlockBody {
 }
 
 export async function POST(req: NextRequest) {
+  const blocked = apiGuard(req);
+  if (blocked) return blocked;
+
   try {
     const body: UnlockBody = await req.json();
     const { fid, signalId } = body;

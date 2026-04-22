@@ -105,8 +105,8 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
           fontFamily: SA.serif, fontSize: 34, fontWeight: 400, lineHeight: 0.98,
           margin: 0, letterSpacing: -0.8, color: 'var(--text-primary)', textAlign: 'center',
         }}>
-          Why every trader<br />
-          <em>should stream</em> alpha.
+          Why every investor<br />
+          should read <em>Morning Whispr.</em>
         </h1>
       </div>
 
@@ -119,15 +119,15 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
         flex: 1,
       }}>
         <p style={{ margin: 0, textIndent: 12 }}>
-          Today, there are more onchain signals per minute than any human can read in a day.
-          Unfortunately, the ones that actually matter are buried beneath ten thousand that don&apos;t.
+          Your AI agent watches DeFi, RWA, and Stablecoins
+          24/7 — so you don&apos;t have to.
         </p>
         <p style={{ margin: '8px 0 0', textIndent: 12 }}>
-          Morning Whispr reads DeFiLlama, CoinGecko and Token Terminal continuously, ranks anomalies,
-          then curates what <em>your</em> network is already talking about.
+          Every morning at 8:00 UTC, the signals that matter.
+          Personalized by your network.
         </p>
         <p style={{ margin: '8px 0 0', textIndent: 12 }}>
-          Cast a signal — unlock the next. The feed pays itself forward.
+          Cast to unlock. Free to share.
         </p>
       </div>
 

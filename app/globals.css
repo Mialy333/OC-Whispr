@@ -100,10 +100,15 @@ body {
 .sa-frame-shell {
   width: 100%;
   max-width: 424px;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+@supports (height: 100dvh) {
+  .sa-frame-shell {
+    height: 100dvh;
+  }
 }
 
 /* Masthead: side-by-side, collapses to column on very narrow screens */

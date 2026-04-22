@@ -153,8 +153,8 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
         {state === 'idle' && (
           <button onClick={handleUnlockClick} style={{
             marginLeft: 'auto',
-            border: `1px solid ${SA.aqua}`, background: 'transparent',
-            color: SA.aqua, fontFamily: SA.sans, fontSize: 10, fontWeight: 600,
+            border: '1px solid var(--accent-phosphore)', background: 'transparent',
+            color: 'var(--accent-phosphore)', fontFamily: SA.sans, fontSize: 10, fontWeight: 600,
             letterSpacing: 0.4, padding: '3px 10px', borderRadius: 10, cursor: 'pointer',
           }}>Cast to unlock</button>
         )}

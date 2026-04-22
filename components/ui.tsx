@@ -105,16 +105,18 @@ export function PButton({ children, primary, onClick, style, small, disabled }: 
       disabled={disabled}
       style={{
         appearance: 'none',
-        border: `1px solid ${primary ? SA.aquaDeep : SA.platinumLo}`,
+        border: primary
+          ? `1px solid ${SA.aquaDeep}`
+          : '1px solid var(--border)',
         background: primary
           ? `linear-gradient(180deg, #6E9BD0 0%, ${SA.aqua} 55%, ${SA.aquaDeep} 100%)`
-          : `linear-gradient(180deg, ${SA.platinumHi} 0%, ${SA.platinum} 55%, ${SA.platinumLo} 100%)`,
-        color: primary ? '#fff' : SA.ink,
+          : 'var(--bg-secondary)',
+        color: primary ? '#fff' : 'var(--text-primary)',
         fontFamily: SA.sans, fontWeight: 600, fontSize: small ? 10 : 11,
         letterSpacing: primary ? 0.3 : 0.1,
         padding: small ? '3px 10px' : '5px 14px',
         borderRadius: 12,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,.6), 0 1px 1px rgba(0,0,0,.08)`,
+        boxShadow: primary ? `inset 0 1px 0 rgba(255,255,255,.5), 0 1px 1px rgba(0,0,0,.08)` : 'none',
         cursor: disabled ? 'not-allowed' : 'pointer',
         textShadow: primary ? '0 -1px 0 rgba(0,0,0,.25)' : 'none',
         opacity: disabled ? 0.6 : 1,
@@ -304,7 +306,7 @@ export function TabBar({ active, onNavigate, dark = false }: TabBarProps) {
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
             padding: '4px 12px',
             fontFamily: SA.sans, fontSize: 9, fontWeight: 600, letterSpacing: 0.3,
-            color: active === t.id ? SA.aquaDeep : (dark ? SA.ash : SA.ash),
+            color: active === t.id ? 'var(--accent-phosphore)' : 'var(--text-muted)',
           }}
         >
           <span style={{ fontSize: 13, lineHeight: 1 }}>{t.icon}</span>
@@ -333,10 +335,10 @@ export function NavBar({
     }}>
       {onBack && (
         <button onClick={onBack} style={{
-          border: `1px solid ${SA.platinumLo}`,
-          background: `linear-gradient(180deg, #fff, ${SA.platinum})`,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-secondary)',
           padding: '2px 9px', borderRadius: 10, cursor: 'pointer',
-          fontFamily: SA.sans, fontSize: 11, color: SA.ink,
+          fontFamily: SA.sans, fontSize: 11, color: 'var(--text-primary)',
         }}>‹ Back</button>
       )}
       <span style={{

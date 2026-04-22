@@ -13,8 +13,8 @@ export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Hide on the Farcaster frame route
-  if (pathname.startsWith('/frame')) return null;
+  // Hide on frame route and main page (page.tsx has its own TabBar)
+  if (pathname.startsWith('/frame') || pathname === '/') return null;
 
   const activeId =
     pathname.startsWith('/settings')     ? 'settings' :

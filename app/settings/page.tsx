@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useRouter } from 'next/navigation';
 import {
-  SA, FRAME_W, NavBar, PButton, RainbowStripes,
+  SA, NavBar, PButton, RainbowStripes,
   Toggle, Segmented,
 } from '@/components/ui';
 import RewardsCard from '@/components/RewardsCard';
@@ -81,10 +81,10 @@ export default function SettingsPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#1A1814', display: 'flex', justifyContent: 'center' }}>
-      <div style={{
-        width: FRAME_W, minHeight: '100vh',
-        backgroundColor: paper, display: 'flex', flexDirection: 'column',
+    <div className="sa-outer" style={{ backgroundColor: '#1A1814' }}>
+      <div className="sa-frame-shell" style={{
+        height: 'auto', minHeight: '100dvh',
+        backgroundColor: paper,
         fontFamily: SA.serif, color: inkC,
       }}>
         <NavBar
@@ -94,7 +94,7 @@ export default function SettingsPage() {
           right={<RainbowStripes h={10} w={18} />}
         />
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px 32px', backgroundColor: paper }}>
+        <div style={{ padding: '8px 14px 32px', backgroundColor: paper }}>
 
           {/* Identity card */}
           {handle ? (

@@ -19,6 +19,8 @@ interface CacheState {
   broadcastedIds: Set<string>;
   refreshing:     boolean;
   intervalHandle: ReturnType<typeof setInterval> | null;
+  lastCastHash:   string | null;
+  totalPublished: number;
 }
 
 // One instance per Node.js process (survives HMR in dev)
@@ -33,6 +35,8 @@ if (!g.__saCache) {
     broadcastedIds: new Set(),
     refreshing:     false,
     intervalHandle: null,
+    lastCastHash:   null,
+    totalPublished: 0,
   };
 }
 
@@ -54,16 +58,26 @@ export function isCacheStale(): boolean {
 
 export function getStatus() {
   return {
-    lastRun:      state.lastRun ? new Date(state.lastRun).toISOString() : null,
-    signalCount:  state.signals.length,
-    dataSource:   state.dataSource,
-    llmModel:     LLM_MODEL(),
-    personalized: false, // feed-level personalization via curateForUser
-    refreshing:   state.refreshing,
-    nextRefreshIn: state.lastRun
+    botUsername:      process.env.BOT_USERNAME ?? null,
+    botFid:           process.env.BOT_FID ?? null,
+    lastPublished:    state.lastRun ? new Date(state.lastRun).toISOString() : null,
+    nextPublish:      '08:00 UTC daily',
+    totalPublished:   state.totalPublished,
+    lastCastHash:     state.lastCastHash,
+    followersCanUnlock: true,
+    signalCount:      state.signals.length,
+    dataSource:       state.dataSource,
+    llmModel:         LLM_MODEL(),
+    refreshing:       state.refreshing,
+    nextRefreshIn:    state.lastRun
       ? Math.max(0, Math.round((state.lastRun + REFRESH_MS - Date.now()) / 1000))
       : 0,
   };
+}
+
+export function recordPublishedCast(hash: string): void {
+  state.lastCastHash = hash;
+  state.totalPublished += 1;
 }
 
 // ── Public write API ───────────────────────────────────────────────────────

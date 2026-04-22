@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import sdk from '@farcaster/miniapp-sdk';
 import type { AlphaSignal } from '@/types';
 import { SA, Sparkline, SeverityChip, seededChart } from '@/components/ui';
@@ -13,22 +13,15 @@ interface Props {
   onOpen?: (s: AlphaSignal) => void;
 }
 
-type UnlockState = 'idle' | 'loading-cast' | 'modal' | 'polling' | 'unlocked';
+const FOLLOW_URL = 'https://warpcast.com/morningwhispr';
 
-const MAX_POLLS = 10;
+export default function SignalCard({ signal, locked, fid: _fid, dark = false, onOpen }: Props) {
+  const [followed, setFollowed] = useState(false);
 
-export default function SignalCard({ signal, locked, fid, dark = false, onOpen }: Props) {
-  const [state, setState] = useState<UnlockState>(locked ? 'idle' : 'unlocked');
-  const [castText, setCastText] = useState('');
-  const [castUrl, setCastUrl] = useState('');
-  const [keyword, setKeyword] = useState('');
-  const [pollCount, setPollCount] = useState(0);
-  const [error, setError] = useState('');
-
-  const ink = dark ? SA.paperDeep : SA.ink;
-  const muted = dark ? SA.ash : SA.ash;
+  const ink  = dark ? SA.paperDeep : SA.ink;
+  const muted = SA.ash;
   const ruleC = dark ? '#332E22' : SA.rule;
-  const isLocked = state !== 'unlocked';
+  const isLocked = locked && !followed;
 
   const ts = new Date(signal.timestamp).toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit', hour12: false,
@@ -36,64 +29,20 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
 
   const chart = seededChart(signal.id);
 
-  const handleUnlockClick = async (e: React.MouseEvent) => {
+  const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setState('loading-cast');
-    setError('');
-    try {
-      const res = await fetch('/api/cast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fid, signalId: signal.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to generate cast');
-      setCastText(data.castText ?? '');
-      setCastUrl(data.castUrl ?? '');
-      setKeyword(data.keyword ?? '');
-      setState('modal');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-      setState('idle');
-    }
-  };
-
-  const handleCastAndUnlock = async () => {
     try {
       const ctx = await sdk.context;
       if (ctx !== null) {
-        await sdk.actions.openUrl(castUrl);
+        await sdk.actions.openUrl(FOLLOW_URL);
       } else {
-        window.open(castUrl, '_blank', 'noopener,noreferrer');
+        window.open(FOLLOW_URL, '_blank', 'noopener,noreferrer');
       }
     } catch {
-      window.open(castUrl, '_blank', 'noopener,noreferrer');
+      window.open(FOLLOW_URL, '_blank', 'noopener,noreferrer');
     }
-    setPollCount(0);
-    setState('polling');
+    setFollowed(true);
   };
-
-  const pollVerify = useCallback(async () => {
-    try {
-      const res = await fetch('/api/verify-cast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fid, signalId: signal.id, keyword }),
-      });
-      const data = await res.json();
-      if (data.verified) setState('unlocked');
-    } catch { /* keep polling */ }
-  }, [fid, signal.id, keyword]);
-
-  useEffect(() => {
-    if (state !== 'polling') return;
-    if (pollCount >= MAX_POLLS) { setState('modal'); return; }
-    const timer = setTimeout(async () => {
-      await pollVerify();
-      setPollCount((c) => c + 1);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [state, pollCount, pollVerify]);
 
   return (
     <div style={{
@@ -137,7 +86,7 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
         <SeverityChip level={signal.severity} />
       </div>
 
-      {/* Data chip + sparkline + TVL + unlock button */}
+      {/* Data chip + sparkline + follow CTA */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
         <span style={{
           fontFamily: SA.mono, fontSize: 10, letterSpacing: 0.5,
@@ -150,23 +99,25 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
           {isLocked ? '██████ ██.█%' : signal.dataPoint}
         </span>
         <Sparkline data={chart} w={64} h={18} color={SA.phosphorGlow} />
-        {state === 'idle' && (
-          <button onClick={handleUnlockClick} style={{
+        {isLocked && (
+          <button onClick={handleFollow} style={{
             marginLeft: 'auto',
             border: '1px solid var(--accent-phosphore)', background: 'transparent',
-            color: 'var(--accent-phosphore)', fontFamily: SA.sans, fontSize: 10, fontWeight: 600,
-            letterSpacing: 0.4, padding: '3px 10px', borderRadius: 10, cursor: 'pointer',
-          }}>Cast to unlock</button>
-        )}
-        {state === 'loading-cast' && (
-          <span style={{ marginLeft: 'auto', fontFamily: SA.mono, fontSize: 10, color: SA.phosphorGlow, animation: 'pulse 1s infinite' }}>■ ■ ■</span>
-        )}
-        {state === 'polling' && (
-          <span style={{ marginLeft: 'auto', fontFamily: SA.mono, fontSize: 9, color: SA.ash, letterSpacing: 0.5 }}>
-            CHECKING… {MAX_POLLS - pollCount}
-          </span>
+            color: 'var(--accent-phosphore)', fontFamily: SA.mono, fontSize: 11, fontWeight: 700,
+            letterSpacing: 0.4, padding: '3px 10px', borderRadius: 0, cursor: 'pointer',
+          }}>FOLLOW TO UNLOCK</button>
         )}
       </div>
+
+      {/* Follow prompt under data row when locked */}
+      {isLocked && (
+        <div style={{
+          marginTop: 8,
+          fontFamily: SA.mono, fontSize: 9, color: muted, letterSpacing: 0.5,
+        }}>
+          Follow @morningwhispr on Farcaster to unlock
+        </div>
+      )}
 
       {/* Summary — only when unlocked */}
       {!isLocked && (
@@ -179,76 +130,14 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
         </p>
       )}
 
-      {error && (
-        <p style={{ margin: '6px 0 0', fontFamily: SA.mono, fontSize: 10, color: SA.rust }}>ERR: {error}</p>
-      )}
-
       {/* Unlock flash overlay */}
-      {state === 'unlocked' && locked && (
+      {followed && locked && (
         <div style={{
           pointerEvents: 'none', position: 'absolute', inset: 0,
           backgroundColor: 'rgba(42,168,75,0.06)',
           animation: 'sa-unlock-flash 1s ease-out forwards',
         }} />
       )}
-
-      {/* Cast modal */}
-      {state === 'modal' && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'absolute', inset: 0, zIndex: 10,
-            display: 'flex', flexDirection: 'column', gap: 10,
-            background: dark ? '#1A1814' : SA.paper,
-            padding: 16,
-            border: `1px solid rgba(26,24,20,0.12)`,
-          }}
-        >
-          <div style={{ fontFamily: SA.mono, fontSize: 9, letterSpacing: 1.5, color: SA.ash, textTransform: 'uppercase' }}>
-            CAST PREVIEW — EDITABLE
-          </div>
-          <textarea
-            value={castText}
-            onChange={(e) => setCastText(e.target.value)}
-            maxLength={280}
-            rows={4}
-            style={{
-              fontFamily: SA.mono, fontSize: 11, lineHeight: 1.5,
-              color: dark ? SA.paperDeep : SA.ink,
-              background: dark ? '#0F1B10' : 'var(--bg-main)',
-              border: `1px solid ${ruleC}`,
-              padding: 10, resize: 'none', outline: 'none', width: '100%',
-              borderRadius: 0,
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: SA.mono, fontSize: 10, color: SA.ash }}>{castText.length}/280</span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <PButtonInline onClick={() => setState('idle')}>Cancel</PButtonInline>
-              <PButtonInline primary onClick={handleCastAndUnlock}>Cast & Unlock ↑</PButtonInline>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  );
-}
-
-// Tiny inline button to avoid circular import
-function PButtonInline({ children, primary, onClick }: { children: React.ReactNode; primary?: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} style={{
-      appearance: 'none',
-      border: `1px solid ${primary ? SA.aquaDeep : 'rgba(26,24,20,0.2)'}`,
-      background: primary
-        ? `linear-gradient(180deg, #6E9BD0 0%, ${SA.aqua} 55%, ${SA.aquaDeep} 100%)`
-        : 'var(--bg-main)',
-      color: primary ? '#fff' : SA.ink,
-      fontFamily: SA.sans, fontWeight: 600, fontSize: 11,
-      padding: '4px 12px', borderRadius: 10,
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,.6)`,
-      cursor: 'pointer',
-      textShadow: primary ? '0 -1px 0 rgba(0,0,0,.25)' : 'none',
-    }}>{children}</button>
   );
 }

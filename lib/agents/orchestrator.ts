@@ -229,6 +229,28 @@ ${hasRevenue ? JSON.stringify(revenueData, null, 2) : '[]'}`;
   return sorted;
 }
 
+export async function generateMorningWhispr(signals: AlphaSignal[]): Promise<string> {
+  const top3 = signals.slice(0, 3).map((s, i) =>
+    `${i + 1}. ${s.protocolName}: ${s.dataPoint} — ${s.title}`
+  ).join('\n');
+
+  const raw = await chat([
+    {
+      role: 'system',
+      content: `You write a daily TradFi/DeFi intelligence briefing for Morning Whispr. Style: institutional, concise, data-driven. No emojis except the final one. Max 280 chars including suffix " 🔍 Morning Whispr".`,
+    },
+    {
+      role: 'user',
+      content: `Write today's morning briefing cast from these top signals:\n${top3}`,
+    },
+  ], 120);
+
+  const suffix = ' 🔍 Morning Whispr';
+  const maxBody = 280 - suffix.length;
+  const body = raw.replace(/\s*🔍.*$/u, '').trim().slice(0, maxBody);
+  return `${body}${suffix}`;
+}
+
 export async function generateCastSummary(signal: AlphaSignal): Promise<string> {
   const systemPrompt = `You write Farcaster casts for a Web3 alpha feed. Style: concise, data-driven, no hype, no emojis except the final one. Max 280 characters including the suffix. Always end with " 🔍 ${APP_NAME}".`;
 

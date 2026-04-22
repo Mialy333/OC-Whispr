@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCastSummary } from '@/lib/agents/orchestrator';
-import { getSignalById } from '@/lib/agents/signal-cache';
+import { checkIfFollows } from '@/lib/api/neynar';
+import { getCachedSignals } from '@/lib/agents/signal-cache';
 import { apiGuard } from '@/lib/middleware';
 
 export const dynamic = 'force-dynamic';
 
-// TODO V2: verify fid matches Privy authenticated user
-function isValidFid(fid: unknown): fid is number {
-  return typeof fid === 'number' && Number.isInteger(fid) && fid > 0 && fid < 1_000_000_000;
-}
+const NO_STORE = { 'Cache-Control': 'no-store' };
 
-interface UnlockBody {
-  fid: number;
-  signalId: string;
+function parseFid(raw: unknown): number | null {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0 || n >= 1_000_000_000) return null;
+  return n;
 }
 
 export async function POST(req: NextRequest) {
@@ -20,51 +18,29 @@ export async function POST(req: NextRequest) {
   if (blocked) return blocked;
 
   try {
-    const body: UnlockBody = await req.json();
-    const { fid, signalId } = body;
-
-    if (!isValidFid(fid) || !signalId) {
-      return NextResponse.json({ error: 'Valid fid and signalId are required' }, { status: 400 });
+    const body: { fid?: unknown } = await req.json();
+    const fid = parseFid(body.fid);
+    if (!fid) {
+      return NextResponse.json({ error: 'Valid fid is required' }, { status: 400, headers: NO_STORE });
     }
 
-    const signal = getSignalById(signalId);
-    if (!signal) {
+    const botFid = parseFid(process.env.BOT_FID);
+    if (!botFid) {
+      return NextResponse.json({ error: 'BOT_FID not configured' }, { status: 500, headers: NO_STORE });
+    }
+
+    const follows = await checkIfFollows(fid, botFid);
+    if (!follows) {
       return NextResponse.json(
-        { error: 'Signal expired, refresh feed' },
-        { status: 404 }
+        { unlocked: false, reason: 'follow_required', followUrl: 'https://warpcast.com/morningwhispr' },
+        { headers: NO_STORE }
       );
     }
 
-    const castHash = req.headers.get('x-cast-hash');
-    if (!castHash) {
-      const castTemplate = await generateCastSummary(signal);
-      return NextResponse.json({ status: 'cast_required', castTemplate });
-    }
-
-    // Verify the cast was published by this fid
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-    if (!appUrl) {
-      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
-    }
-
-    const verifyRes = await fetch(`${appUrl}/api/verify-cast`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fid, signalId, keyword: castHash }),
-    });
-
-    if (!verifyRes.ok) {
-      return NextResponse.json({ error: 'Cast verification failed' }, { status: 502 });
-    }
-
-    const { verified } = await verifyRes.json();
-    if (!verified) {
-      return NextResponse.json({ status: 'cast_required', reason: 'cast_not_verified' });
-    }
-
-    return NextResponse.json({ status: 'unlocked', signal });
+    const signals = getCachedSignals();
+    return NextResponse.json({ unlocked: true, signals }, { headers: NO_STORE });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500, headers: NO_STORE });
   }
 }

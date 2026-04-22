@@ -70,6 +70,22 @@ export interface RecentCast {
   author_fid: number;
 }
 
+export async function checkIfFollows(fid: number, targetFid: number): Promise<boolean> {
+  if (!fid || !targetFid) return false;
+  try {
+    // viewer_context.following tells us if viewer (fid) follows the target user
+    const res = await fetch(
+      `${BASE}/user/bulk?fids=${targetFid}&viewer_fid=${fid}`,
+      { headers: headers(), next: { revalidate: 60 } }
+    );
+    if (!res.ok) return false;
+    const data: { users?: { viewer_context?: { following?: boolean } }[] } = await res.json();
+    return data.users?.[0]?.viewer_context?.following === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function getRecentCastsByFids(
   fids: number[],
   limit = 5

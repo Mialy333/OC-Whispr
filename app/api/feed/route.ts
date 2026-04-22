@@ -4,6 +4,7 @@ import { analyzeProtocols, curateForUser } from '@/lib/agents/orchestrator';
 import {
   getCachedSignals, isCacheStale, ensureRefreshLoop,
 } from '@/lib/agents/signal-cache';
+import { checkIfFollows } from '@/lib/api/neynar';
 import { apiGuard } from '@/lib/middleware';
 import type { AlphaSignal } from '@/types';
 
@@ -31,7 +32,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid fid' }, { status: 400, headers: NO_STORE });
     }
 
-    // Use cached signals if fresh; otherwise re-analyze (also refreshes cache)
     let rawSignals: AlphaSignal[];
     if (isCacheStale()) {
       const protocols = await getTopProtocols(20);
@@ -44,11 +44,16 @@ export async function GET(req: NextRequest) {
       ? await curateForUser(fid, rawSignals)
       : rawSignals;
 
+    // Check follow status — followers get all signals unlocked
+    const botFid = process.env.BOT_FID ? Number(process.env.BOT_FID) : 0;
+    const followsBot = fid && botFid ? await checkIfFollows(fid, botFid) : false;
+
     const free   = signals.slice(0, 2);
-    const locked = signals.slice(2);
+    const locked = followsBot ? [] : signals.slice(2);
+    const bonus  = followsBot ? signals.slice(2) : [];
 
     return NextResponse.json(
-      { free, locked, total: signals.length },
+      { free: [...free, ...bonus], locked, total: signals.length, followsBot },
       { headers: NO_STORE }
     );
   } catch (err) {

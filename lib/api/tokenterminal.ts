@@ -1,4 +1,7 @@
-const BASE = 'https://api.tokenterminal.com/v2';
+// Replaced Token Terminal (paid) with DeFiLlama /overview/fees (free).
+// Same data shape preserved so orchestrator requires no interface changes.
+
+const BASE = 'https://api.llama.fi';
 
 export interface TokenTerminalProject {
   id: string;
@@ -10,49 +13,39 @@ export interface TokenTerminalProject {
   activeUsers30d: number;
 }
 
-interface TTProject {
-  project_id: string;
+interface LlamaFeesProtocol {
   name: string;
-  revenue_30d?: number;
-  revenue_90d?: number;
-  revenue_annualized?: number;
-  fees_30d?: number;
-  active_developers?: number;
+  total24h: number | null;
+  revenue24h: number | null;
+  total30d: number | null;
+  revenue30d: number | null;
 }
 
 export async function getTopDeFiProjects(): Promise<TokenTerminalProject[]> {
-  const apiKey = process.env.TOKENTERMINAL_API_KEY;
-  if (!apiKey) {
-    console.warn('[tokenterminal] TOKENTERMINAL_API_KEY not set — skipping');
-    return [];
-  }
-
   try {
-    const res = await fetch(`${BASE}/projects?tags=defi`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      next: { revalidate: 300 },
-    });
+    const res = await fetch(`${BASE}/overview/fees`, { next: { revalidate: 300 } });
     if (!res.ok) {
-      console.warn(`[tokenterminal] ${res.status}: ${await res.text()}`);
+      console.warn(`[fees] DeFiLlama /overview/fees ${res.status}`);
       return [];
     }
-    const data: { data?: TTProject[] } = await res.json();
-    const projects = data.data ?? [];
+    const data: { protocols?: LlamaFeesProtocol[] } = await res.json();
+    const protocols = data.protocols ?? [];
 
-    return projects
+    return protocols
+      .filter((p) => (p.revenue24h ?? 0) > 0 || (p.total24h ?? 0) > 0)
+      .sort((a, b) => (b.revenue24h ?? 0) - (a.revenue24h ?? 0))
+      .slice(0, 10)
       .map((p) => ({
-        id:                 p.project_id,
-        name:               p.name,
-        revenue30d:         p.revenue_30d         ?? 0,
-        revenue90d:         p.revenue_90d         ?? 0,
-        revenueAnnualized:  p.revenue_annualized  ?? 0,
-        fees30d:            p.fees_30d            ?? 0,
-        activeUsers30d:     p.active_developers   ?? 0,
-      }))
-      .sort((a, b) => b.revenue30d - a.revenue30d)
-      .slice(0, 10);
+        id: p.name.toLowerCase().replace(/\s+/g, '-'),
+        name: p.name,
+        revenue30d:        p.revenue30d        ?? 0,
+        revenue90d:        0,
+        revenueAnnualized: (p.revenue30d ?? 0) * 12,
+        fees30d:           p.total30d          ?? 0,
+        activeUsers30d:    0,
+      }));
   } catch (e) {
-    console.warn('[tokenterminal] fetch failed:', e);
+    console.warn('[fees] fetch failed:', e);
     return [];
   }
 }

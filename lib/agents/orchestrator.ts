@@ -3,10 +3,10 @@ import type { Protocol, AlphaSignal } from '@/types';
 import { getUserFollowing, getRecentCastsByFids } from '@/lib/api/neynar';
 import type { RecentCast } from '@/lib/api/neynar';
 import { getStablecoinPrices, getRWATokens } from '@/lib/api/coingecko';
+import { getRWAProtocols, getStablecoinData } from '@/lib/api/defillama';
 import { getTopDeFiProjects } from '@/lib/api/tokenterminal';
 import type { TokenTerminalProject } from '@/lib/api/tokenterminal';
-import { getHeatmapData } from '@/lib/api/coin360';
-import type { Coin360Entry } from '@/lib/api/coin360';
+// Coin360 removed — CoinGecko covers same data for free
 import { updateCache } from '@/lib/agents/signal-cache';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
@@ -117,17 +117,17 @@ interface AnalysisInput {
   defillama:   Protocol[];
   stablecoins: ReturnType<typeof getStablecoinPrices> extends Promise<infer T> ? T : never;
   revenue:     TokenTerminalProject[];
-  heatmap:     Coin360Entry[];
 }
 
 export async function analyzeProtocols(protocols: Protocol[]): Promise<AlphaSignal[]> {
   if (protocols.length === 0) return [];
 
-  const [stablecoins, rwaTokens, ttProjects, heatmap] = await Promise.allSettled([
+  const [stablecoins, rwaTokens, ttProjects, rwaProtocols, llamaStablecoins] = await Promise.allSettled([
     getStablecoinPrices(),
     getRWATokens(),
     getTopDeFiProjects(),
-    getHeatmapData(),
+    getRWAProtocols(),
+    getStablecoinData(),
   ]);
 
   const protocolData = protocols.map((p) => ({
@@ -156,46 +156,48 @@ export async function analyzeProtocols(protocols: Protocol[]): Promise<AlphaSign
       }))
     : [];
 
-  const heatmapData = heatmap.status === 'fulfilled'
-    ? heatmap.value.map((c) => ({
-        symbol: c.symbol, name: c.name,
-        change1h: c.change1h, change24h: c.change24h, change7d: c.change7d,
-        marketCapUsd: c.marketCapUsd,
+  const rwaProtocolData = rwaProtocols.status === 'fulfilled'
+    ? rwaProtocols.value.map((p) => ({
+        name: p.name, tvl: p.tvl, change24h: p.change24h, category: p.category,
       }))
     : [];
 
-  const hasRevenue  = revenueData.length > 0;
-  const hasHeatmap  = heatmapData.length > 0;
+  const llamaStablecoinData = llamaStablecoins.status === 'fulfilled'
+    ? llamaStablecoins.value.map((s) => ({
+        name: s.name, symbol: s.symbol, pegType: s.pegType,
+        price: s.price, pegDeviation: s.pegDeviation, mcapUsd: s.mcapUsd,
+      }))
+    : [];
 
-  const systemPrompt = `You are a Web3 alpha analyst. Detect anomalies across DeFi, RWA, and stablecoin data from 4 sources.
+  const hasRevenue = revenueData.length > 0;
 
-Rules:
-- Flag TVL change > 20% (up or down) as HIGH severity
-- Flag fee or revenue surge > 50% vs 30d avg as HIGH severity
-- Flag stablecoin peg deviation > 0.5% as HIGH severity
-- Flag 1h price change > 5% in heatmap as MEDIUM severity
-- Flag revenue/fee compression as MEDIUM severity
-- Ranked by severity (HIGH first), be data-driven, no hype
+  const systemPrompt = `You are a financial intelligence agent bridging TradFi and DeFi.
+Analyze the following protocol data and identify signals relevant to:
+- Institutional investors (RWA, tokenized treasuries, yield)
+- Stablecoin health (peg stability, collateral ratio)
+- DeFi protocol revenue (sustainable vs mercenary)
+Flag anomalies: TVL change >15%, peg deviation >0.3%, revenue spike >30%.
+Return signals a Bloomberg analyst would care about.
 
 Return ONLY a valid JSON array of exactly 5 objects, no markdown, no explanation, no code fences.
 Each object: {"protocolName":"string","title":"string max 60 chars","summary":"string max 120 chars","dataPoint":"string e.g. TVL +42% · 24h","severity":"high|medium|low"}`;
 
-  const userMessage = `Analyze all 4 data sources below. Return exactly 5 anomaly signals as a JSON array.
+  const userMessage = `Analyze all sources below. Return exactly 5 anomaly signals as a JSON array.
 
-SOURCE 1 — DeFiLlama protocols (TVL, fees, revenue):
+SOURCE 1 — DeFiLlama top protocols (TVL, fees, revenue):
 ${JSON.stringify(protocolData, null, 2)}
 
-SOURCE 2 — CoinGecko stablecoins (flag pegDeviation > 0.005):
-${JSON.stringify(stablecoinData, null, 2)}
+SOURCE 2 — DeFiLlama RWA protocols (tokenized assets, real-world lending):
+${JSON.stringify(rwaProtocolData, null, 2)}
 
-SOURCE 2b — CoinGecko RWA tokens:
-${JSON.stringify(rwaData, null, 2)}
+SOURCE 3 — DeFiLlama stablecoins (flag pegDeviation > 0.003):
+${JSON.stringify(llamaStablecoinData, null, 2)}
 
-SOURCE 3 — Token Terminal top DeFi by 30d revenue${hasRevenue ? '' : ' (unavailable)'}:
-${hasRevenue ? JSON.stringify(revenueData, null, 2) : '[]'}
+SOURCE 4 — CoinGecko stablecoins + RWA tokens (cross-reference):
+${JSON.stringify([...stablecoinData, ...rwaData], null, 2)}
 
-SOURCE 4 — Coin360 market heatmap${hasHeatmap ? '' : ' (unavailable)'}:
-${hasHeatmap ? JSON.stringify(heatmapData, null, 2) : '[]'}`;
+SOURCE 5 — DeFiLlama fees: top DeFi protocols by 24h revenue${hasRevenue ? '' : ' (unavailable)'}:
+${hasRevenue ? JSON.stringify(revenueData, null, 2) : '[]'}`;
 
   async function fetchSignals(temperature?: number): Promise<AlphaSignal[]> {
     const raw = await chat(
@@ -221,7 +223,7 @@ ${hasHeatmap ? JSON.stringify(heatmapData, null, 2) : '[]'}`;
     (a, b) => severityScore(b) - severityScore(a)
   );
 
-  const sources = ['defillama', 'coingecko', hasRevenue ? 'tokenterminal' : '', hasHeatmap ? 'coin360' : ''].filter(Boolean).join('+');
+  const sources = ['defillama', 'coingecko', hasRevenue ? 'defillama-fees' : ''].filter(Boolean).join('+');
   updateCache(sorted, sources);
 
   return sorted;

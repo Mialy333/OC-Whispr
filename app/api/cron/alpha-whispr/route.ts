@@ -3,7 +3,7 @@ import { getTopProtocols, getRWAProtocols, getStablecoinData } from '@/lib/api/d
 import { analyzeProtocols, generateAlphaWhispr } from '@/lib/agents/orchestrator';
 import { publishCast } from '@/lib/api/neynar';
 import { recordPublishedCast } from '@/lib/agents/signal-cache';
-import { kv } from '@vercel/kv';
+import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -45,10 +45,11 @@ export async function GET(req: NextRequest) {
 
     if (result.hash) {
       recordPublishedCast(result.hash);
+      const redis = await getRedis();
       await Promise.all([
-        kv.set('lastCastHash', result.hash),
-        kv.set('lastPublished', new Date().toISOString()),
-        kv.incr('totalPublished'),
+        redis.set('lastCastHash', result.hash),
+        redis.set('lastPublished', new Date().toISOString()),
+        redis.incr('totalPublished'),
       ]);
     }
 

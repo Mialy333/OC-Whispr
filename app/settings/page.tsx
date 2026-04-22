@@ -179,7 +179,7 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <RainbowStripes h={18} w={38} />
               <div style={{ flex: 1 }}>
-                <div style={{ ...serif, fontSize: 15, fontStyle: 'italic', color: inkC, letterSpacing: -0.2 }}>Morning Whispr</div>
+                <div style={{ ...serif, fontSize: 15, fontStyle: 'italic', color: inkC, letterSpacing: -0.2 }}>Alpha Whispr</div>
                 <div style={{ ...mono, fontSize: 9, color: SA.ash, letterSpacing: 0.8 }}>v1.0.0 · BUILD 260422 · © 2026</div>
               </div>
             </div>

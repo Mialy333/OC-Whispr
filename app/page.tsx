@@ -74,7 +74,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
               position: 'absolute', inset: 6, color: SA.terminalGreen,
               fontFamily: SA.mono, fontSize: 7.5, lineHeight: 1.35, letterSpacing: 0.3,
             }}>
-              <div>MORNING WHISPR v1.0</div>
+              <div>ALPHA WHISPR v1.0</div>
               <div>────────────────────</div>
               <div>&gt; SCAN_DEFI.RUN</div>
               <div style={{ color: '#C8E8A8' }}>▲ ONDO  +18%</div>
@@ -112,7 +112,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
           fontSize: 48, fontWeight: 700, lineHeight: 1.0,
           margin: 0, letterSpacing: -1, color: 'var(--text-primary)',
         }}>
-          Morning Whispr.
+          Alpha Whispr.
         </h1>
       </div>
 
@@ -146,7 +146,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
         </PButton>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontFamily: SA.mono, fontSize: 9, color: SA.ash, letterSpacing: 0.6 }}>
           <RainbowStripes h={8} w={16} />
-          <span>MORNING WHISPR™ · EST. 2026 · v1.0</span>
+          <span>ALPHA WHISPR™ · EST. 2026 · v1.0</span>
         </div>
       </div>
     </div>
@@ -185,7 +185,7 @@ function FeedScreen({
     'INSTITUTIONAL SIGNALS · AI-CURATED · UPDATED CONTINUOUSLY',
     'CAST A SIGNAL → UNLOCK THE NEXT',
     'DEFILLAMA · COINGECKO · TOKEN TERMINAL',
-    'POWERED BY MORNING WHISPR v1.0',
+    'POWERED BY ALPHA WHISPR v1.0',
   ];
 
   return (
@@ -195,7 +195,7 @@ function FeedScreen({
         dark={dark}
         title={
           <span style={{ fontFamily: SA.serif, fontSize: 13, fontStyle: 'italic', letterSpacing: -0.2 }}>
-            Morning Whispr <span style={{ fontStyle: 'normal', color: SA.ash, fontSize: 10 }}>· feed</span>
+            Alpha Whispr <span style={{ fontStyle: 'normal', color: SA.ash, fontSize: 10 }}>· feed</span>
           </span>
         }
         right={<span style={{ color: SA.phosphorGlow }}>● LIVE</span>}
@@ -213,7 +213,7 @@ function FeedScreen({
             {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
           </div>
           <div style={{ fontFamily: SA.serif, fontSize: 18, fontWeight: 500, color: inkC, letterSpacing: -0.3 }}>
-            The Morning Whispr.
+            The Alpha Whispr.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
@@ -695,7 +695,7 @@ function SettingsScreen({
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <RainbowStripes h={18} w={38} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: SA.serif, fontSize: 15, fontStyle: 'italic', color: inkC, letterSpacing: -0.2 }}>Morning Whispr</div>
+              <div style={{ fontFamily: SA.serif, fontSize: 15, fontStyle: 'italic', color: inkC, letterSpacing: -0.2 }}>Alpha Whispr</div>
               <div style={{ fontFamily: SA.mono, fontSize: 9, color: SA.ash, letterSpacing: 0.8 }}>v1.0.0 · BUILD 260422 · © 2026</div>
             </div>
           </div>

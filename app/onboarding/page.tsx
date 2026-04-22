@@ -89,7 +89,7 @@ export default function OnboardingPage() {
               ...serif, fontSize: 36, fontWeight: 400, lineHeight: 1.0,
               letterSpacing: -1, color: ink, margin: '20px 0 10px',
             }}>
-              Why every investor<br />should read <em>Morning Whispr.</em>
+              Why every investor<br />should read <em>Alpha Whispr.</em>
             </h1>
             <div style={{ ...serif, fontSize: 13, lineHeight: 1.5, color: sec, flex: 1 }}>
               <p style={{ margin: 0, textIndent: 12 }}>
@@ -98,7 +98,7 @@ export default function OnboardingPage() {
                 markets are buried beneath ten thousand that don&apos;t.
               </p>
               <p style={{ margin: '10px 0 0', textIndent: 12 }}>
-                Morning Whispr monitors DeFiLlama, CoinGecko, and Token
+                Alpha Whispr monitors DeFiLlama, CoinGecko, and Token
                 Terminal continuously — detecting anomalies in RWA yields,
                 stablecoin pegs, and protocol revenue before they hit
                 your timeline.

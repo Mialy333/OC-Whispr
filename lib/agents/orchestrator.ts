@@ -11,7 +11,7 @@ import { updateCache } from '@/lib/agents/signal-cache';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 const MODEL = process.env.OPENROUTER_MODEL ?? 'google/gemini-2.0-flash-001';
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'MorningWhispr';
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'AlphaWhispr';
 
 function stableId(protocolId: string, title: string): string {
   return createHash('md5').update(protocolId + title).digest('hex').slice(0, 12);
@@ -229,7 +229,7 @@ ${hasRevenue ? JSON.stringify(revenueData, null, 2) : '[]'}`;
   return sorted;
 }
 
-export async function generateMorningWhispr(signals: AlphaSignal[]): Promise<string> {
+export async function generateAlphaWhispr(signals: AlphaSignal[]): Promise<string> {
   const top3 = signals.slice(0, 3).map((s, i) =>
     `${i + 1}. ${s.protocolName}: ${s.dataPoint} — ${s.title}`
   ).join('\n');
@@ -237,7 +237,7 @@ export async function generateMorningWhispr(signals: AlphaSignal[]): Promise<str
   const raw = await chat([
     {
       role: 'system',
-      content: `You write a daily TradFi/DeFi intelligence briefing for Morning Whispr. Style: institutional, concise, data-driven. No emojis except the final one. Max 280 chars including suffix " 🔍 Morning Whispr".`,
+      content: `You write a daily TradFi/DeFi intelligence briefing for Alpha Whispr. Style: institutional, concise, data-driven. No emojis except the final one. Max 280 chars including suffix " 🔍 Alpha Whispr".`,
     },
     {
       role: 'user',
@@ -245,7 +245,7 @@ export async function generateMorningWhispr(signals: AlphaSignal[]): Promise<str
     },
   ], 120);
 
-  const suffix = ' 🔍 Morning Whispr';
+  const suffix = ' 🔍 Alpha Whispr';
   const maxBody = 280 - suffix.length;
   const body = raw.replace(/\s*🔍.*$/u, '').trim().slice(0, maxBody);
   return `${body}${suffix}`;

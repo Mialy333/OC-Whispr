@@ -39,16 +39,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Morning Whispr',
+  title: 'Alpha Whispr',
   description: 'Your daily TradFi/DeFi intelligence briefing, powered by AI on Farcaster',
   openGraph: {
-    title: 'Morning Whispr',
+    title: 'Alpha Whispr',
     description: 'AI agent monitoring DeFi, RWA & Stablecoin protocols 24/7',
   },
   other: {
     'fc:frame': 'vNext',
     'fc:frame:image': `${appUrl}/frame/opengraph-image`,
-    'fc:frame:button:1': 'Open Morning Whispr',
+    'fc:frame:button:1': 'Open Alpha Whispr',
     'fc:frame:post_url': `${appUrl}/api/frame`,
   },
 };

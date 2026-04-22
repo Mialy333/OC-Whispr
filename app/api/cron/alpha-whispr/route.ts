@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTopProtocols, getRWAProtocols, getStablecoinData } from '@/lib/api/defillama';
-import { analyzeProtocols, generateMorningWhispr } from '@/lib/agents/orchestrator';
+import { analyzeProtocols, generateAlphaWhispr } from '@/lib/agents/orchestrator';
 import { publishCast } from '@/lib/api/neynar';
 import { recordPublishedCast } from '@/lib/agents/signal-cache';
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     const allProtocols = protocols.status === 'fulfilled' ? protocols.value : [];
     const signals = await analyzeProtocols(allProtocols);
 
-    const castText = await generateMorningWhispr(signals);
+    const castText = await generateAlphaWhispr(signals);
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
     const embedUrls = appUrl ? [`${appUrl}/frame`] : [];
 

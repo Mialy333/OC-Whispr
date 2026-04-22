@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'NEXT_PUBLIC_APP_URL not set' }, { status: 500, headers: NO_STORE });
   }
 
-  const cronRes = await fetch(`${appUrl}/api/cron/morning-whispr`, {
+  const cronRes = await fetch(`${appUrl}/api/cron/alpha-whispr`, {
     headers: { 'x-cron-secret': process.env.CRON_SECRET ?? '' },
   });
 

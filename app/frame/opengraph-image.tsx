@@ -31,7 +31,7 @@ export default function OGImage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ fontSize: '52px' }}>🔍</span>
             <span style={{ fontSize: '52px', fontWeight: 700, color: '#f4f4f5', letterSpacing: '-1px' }}>
-              Morning Whispr
+              Alpha Whispr
             </span>
           </div>
           <p style={{ fontSize: '22px', color: '#a1a1aa', margin: 0, lineHeight: 1.5 }}>

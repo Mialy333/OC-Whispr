@@ -53,7 +53,7 @@ export default function DonateButton({ dark = false }: Props) {
       }}
     >
       <span style={{ fontSize: 12 }}>♡</span>
-      Support Morning Whispr
+      Support Alpha Whispr
     </button>
   );
 }

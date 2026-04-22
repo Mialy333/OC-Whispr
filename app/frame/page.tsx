@@ -94,7 +94,7 @@ export default function FramePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 px-3 py-4">
-      <div className="mx-auto max-w-sm flex flex-col gap-3">
+      <div className="w-full flex flex-col" style={{ gap: 'clamp(8px, 2vw, 12px)' }}>
         {feed?.free.map((signal) => (
           <SignalCard key={signal.id} signal={signal} locked={false} fid={fid!} />
         ))}

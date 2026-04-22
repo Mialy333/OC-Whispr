@@ -23,9 +23,9 @@ export default function BottomNav() {
     'feed';
 
   return (
-    <nav style={{
+    <nav className="sa-bottom-nav" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
-      height: 48, zIndex: 100,
+      zIndex: 100,
       backgroundColor: 'var(--bg-primary)',
       borderTop: '1px solid var(--border)',
       display: 'flex', alignItems: 'stretch',
@@ -38,7 +38,7 @@ export default function BottomNav() {
             key={tab.id}
             onClick={() => router.push(tab.href)}
             style={{
-              flex: 1, display: 'flex', flexDirection: 'column',
+              flex: 1, height: 48, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: 2,
               background: 'transparent', border: 'none', cursor: 'pointer',
               position: 'relative', paddingBottom: 2,

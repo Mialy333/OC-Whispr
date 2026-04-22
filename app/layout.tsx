@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { EB_Garamond, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { checkEnv } from '@/lib/env';
@@ -24,6 +24,13 @@ const ibmMono = IBM_Plex_Mono({
 
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: 'Stream Alpha',
   description: 'Personalized Web3/DeFi alpha feed, curated by AI',
@@ -41,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();` }} />
       </head>
-      <body style={{ paddingBottom: 48 }}>
+      <body style={{ paddingBottom: 'calc(48px + env(safe-area-inset-bottom, 0px))' }}>
         <Providers>{children}</Providers>
         <BottomNav />
       </body>

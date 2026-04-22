@@ -97,7 +97,7 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
 
   return (
     <div style={{
-      padding: '14px 18px 12px',
+      padding: 'clamp(12px, 4vw, 20px) clamp(14px, 4.5vw, 20px) clamp(10px, 3.5vw, 16px)',
       borderBottom: `0.5px solid ${ruleC}`,
       position: 'relative', cursor: 'pointer',
       background: signal.boosted && !isLocked
@@ -126,7 +126,7 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
       {/* Headline + severity */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <h3 style={{
-          flex: 1, fontFamily: SA.serif, fontSize: 18, fontWeight: 500,
+          flex: 1, fontFamily: SA.serif, fontSize: 'clamp(14px, 4vw, 18px)', fontWeight: 500,
           lineHeight: 1.12, margin: 0, letterSpacing: -0.4, color: ink,
           filter: isLocked ? 'blur(4.5px)' : 'none',
           transition: 'filter .4s',
@@ -138,7 +138,7 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
       </div>
 
       {/* Data chip + sparkline + TVL + unlock button */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
         <span style={{
           fontFamily: SA.mono, fontSize: 10, letterSpacing: 0.5,
           background: dark ? '#0C1A0C' : SA.terminal,

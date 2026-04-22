@@ -83,6 +83,48 @@ body {
   100% { opacity: 0; }
 }
 
+/* ─── Responsive Layout ─── */
+.sa-outer {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+@media (min-width: 720px) {
+  .sa-outer {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+}
+
+.sa-frame-shell {
+  width: 100%;
+  max-width: 424px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Masthead: side-by-side, collapses to column on very narrow screens */
+.sa-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+@media (max-width: 380px) {
+  .sa-masthead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Bottom nav safe-area support */
+.sa-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* ─── Utilities ─── */
 .grid-bg {
   background-image:

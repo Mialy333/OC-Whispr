@@ -198,11 +198,10 @@ function FeedScreen({
       />
 
       {/* Editorial masthead */}
-      <div style={{
+      <div className="sa-masthead" style={{
         padding: '12px 18px 10px',
         borderBottom: `1px solid ${dark ? '#332E22' : SA.ink}`,
         background: dark ? '#1F1B15' : SA.platinumHi,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div>
           <div style={{ fontFamily: SA.mono, fontSize: 9, letterSpacing: 2, color: dark ? SA.ash : SA.graphite }}>
@@ -768,22 +767,13 @@ export default function Home() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh', backgroundColor: '#1A1814',
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-      padding: '0',
-    }}>
+    <div className="sa-outer" style={{ backgroundColor: '#1A1814' }}>
       {/* Miniapp frame shell */}
-      <div style={{
-        width: FRAME_W,
-        minHeight: '100vh',
+      <div className="sa-frame-shell" style={{
         background: paper,
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
         fontFamily: SA.serif,
         color: dark ? SA.paperDeep : SA.ink,
-        overflow: 'hidden',
       }}>
         <StatusBar dark={dark} />
 

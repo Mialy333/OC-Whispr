@@ -274,8 +274,8 @@ export function Ticker({ items }: { items: string[] }) {
 }
 
 interface TabBarProps {
-  active: 'feed' | 'leaderboard' | 'alerts' | 'settings';
-  onNavigate: (tab: 'feed' | 'leaderboard' | 'alerts' | 'settings') => void;
+  active: 'feed' | 'leaderboard' | 'alerts' | 'settings' | 'advisor';
+  onNavigate: (tab: 'feed' | 'leaderboard' | 'alerts' | 'settings' | 'advisor') => void;
   dark?: boolean;
 }
 
@@ -283,6 +283,7 @@ export function TabBar({ active, onNavigate, dark = false }: TabBarProps) {
   const tabs = [
     { id: 'feed'        as const, label: 'Feed',    icon: '▤' },
     { id: 'leaderboard' as const, label: 'Leaders', icon: '♛' },
+    { id: 'advisor'     as const, label: 'Advisor', icon: '◈' },
     { id: 'alerts'      as const, label: 'Alerts',  icon: '♪' },
     { id: 'settings'    as const, label: 'Profile', icon: '◉' },
   ];
@@ -304,6 +305,7 @@ export function TabBar({ active, onNavigate, dark = false }: TabBarProps) {
             padding: '4px 12px',
             fontFamily: SA.sans, fontSize: 9, fontWeight: 600, letterSpacing: 0.3,
             color: active === t.id ? 'var(--accent-phosphore)' : 'var(--text-muted)',
+            borderBottom: active === t.id && t.id === 'advisor' ? '2px solid var(--accent-phosphore)' : '2px solid transparent',
           }}
         >
           <span style={{ fontSize: 13, lineHeight: 1 }}>{t.icon}</span>

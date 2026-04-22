@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import sdk from '@farcaster/miniapp-sdk';
 import { SA, PButton, NavBar } from '@/components/ui';
 import type { AdvisorResponse, YieldAdvice } from '@/types/advisor';
 
@@ -29,7 +30,8 @@ const RISK_COLOR: Record<YieldAdvice['riskLevel'], string> = {
 export default function AdvisorResultsPage() {
   const router = useRouter();
   const dark = useDark();
-  const [result, setResult] = useState<AdvisorResponse | null>(null);
+  const [result, setResult]           = useState<AdvisorResponse | null>(null);
+  const [notifEnabled, setNotifEnabled] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('advisorResult');
@@ -135,8 +137,30 @@ export default function AdvisorResultsPage() {
           ))}
         </div>
 
+        {/* Notification opt-in */}
+        <div style={{ padding: '4px 16px 0' }}>
+          <button
+            onClick={async () => {
+              try {
+                await sdk.actions.addFrame?.();
+                setNotifEnabled(true);
+              } catch { console.log('not in frame'); }
+            }}
+            style={{
+              width: '100%', padding: '10px',
+              border: `1px solid ${notifEnabled ? SA.phosphorGlow : border}`,
+              background: 'transparent', borderRadius: 12, cursor: 'pointer',
+              ...mono, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' as const,
+              color: notifEnabled ? SA.phosphorGlow : muted,
+              transition: 'all .2s',
+            }}
+          >
+            {notifEnabled ? '✓ NOTIFICATIONS ON' : '🔔 Notify me when yields change'}
+          </button>
+        </div>
+
         {/* Actions */}
-        <div style={{ padding: '18px 16px 36px', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
+        <div style={{ padding: '12px 16px 36px', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
           <PButton primary onClick={handleShare}
             style={{ width: '100%', padding: '11px', fontSize: 13, borderRadius: 14 }}>
             Share on Farcaster →

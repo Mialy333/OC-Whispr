@@ -51,6 +51,8 @@ export async function GET(req: NextRequest) {
       ]);
     }
 
+    console.log('[Advisor] Active profiles:', await getRedis().then(r => r.keys('advisor:*')).then(k => k.length).catch(() => 0));
+
     return NextResponse.json({
       success: true,
       castHash: result.hash,

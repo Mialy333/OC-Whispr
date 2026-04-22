@@ -163,7 +163,7 @@ function FeedScreen({
   dark: boolean;
   onToggleDark: () => void;
   onOpenSignal: (s: AlphaSignal) => void;
-  onNavigate: (tab: 'feed' | 'leaderboard' | 'alerts' | 'settings') => void;
+  onNavigate: (tab: 'feed' | 'leaderboard' | 'alerts' | 'settings' | 'advisor') => void;
   fid: number;
 }) {
   const [filter, setFilter] = useState<FilterKey>('ALL');
@@ -216,7 +216,11 @@ function FeedScreen({
             The Alpha Whispr.
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <a href="/advisor" style={{
+            fontFamily: SA.mono, fontSize: 10, color: 'var(--accent-phosphore)',
+            textDecoration: 'none', letterSpacing: 0.3, whiteSpace: 'nowrap',
+          }}>Yield Advisor →</a>
           <button onClick={onToggleDark} title="Toggle theme" style={{
             width: 22, height: 22, borderRadius: 11,
             border: `1px solid rgba(26,24,20,0.2)`, cursor: 'pointer',
@@ -740,8 +744,9 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, [authenticated, fid]);
 
-  const handleNavigate = (tab: 'feed' | 'leaderboard' | 'alerts' | 'settings') => {
+  const handleNavigate = (tab: 'feed' | 'leaderboard' | 'alerts' | 'settings' | 'advisor') => {
     if (tab === 'alerts') return; // not implemented yet
+    if (tab === 'advisor') { window.location.href = '/advisor'; return; }
     setView(tab);
   };
 

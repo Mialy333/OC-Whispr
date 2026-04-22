@@ -2,10 +2,9 @@ const BASE = 'https://api.neynar.com/v2/farcaster';
 
 export async function publishCast(
   text: string,
-  embedUrls: string[] = [],
 ): Promise<{ hash?: string; error?: string }> {
-  const signerUuid = process.env.NEYNAR_SIGNER_UUID;
-  if (!signerUuid) return { error: 'NEYNAR_SIGNER_UUID not set' };
+  const signerUuid = process.env.NEYNAR_BOT_UUID;
+  if (!signerUuid) return { error: 'NEYNAR_BOT_UUID not set' };
   try {
     const res = await fetch(`${BASE}/cast`, {
       method: 'POST',
@@ -16,7 +15,6 @@ export async function publishCast(
       body: JSON.stringify({
         signer_uuid: signerUuid,
         text,
-        embeds: embedUrls.map((url) => ({ url })),
       }),
     });
     const data = await res.json();

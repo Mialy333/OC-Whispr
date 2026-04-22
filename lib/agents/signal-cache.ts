@@ -103,8 +103,7 @@ async function broadcastNewHighSignals(signals: AlphaSignal[]): Promise<void> {
   for (const signal of highSignals) {
     state.broadcastedIds.add(signal.id); // mark before async to prevent double-send
     const text = `🚨 ${signal.protocolName}: ${signal.title}\n\n${signal.dataPoint} 🔍 Alpha Whispr`;
-    const frameUrl = `${appUrl}/frame?signal=${encodeURIComponent(signal.id)}`;
-    const result = await publishCast(text.slice(0, 320), [frameUrl]);
+    const result = await publishCast(text.slice(0, 320));
     if (result.error) {
       console.warn('[signal-cache] broadcast failed:', result.error);
       state.broadcastedIds.delete(signal.id); // allow retry on next run

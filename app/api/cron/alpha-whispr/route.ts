@@ -32,10 +32,8 @@ export async function GET(req: NextRequest) {
     const signals = await analyzeProtocols(allProtocols);
 
     const castText = await generateAlphaWhispr(signals);
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
-    const embedUrls = appUrl ? [`${appUrl}/frame`] : [];
 
-    const result = await publishCast(castText, embedUrls);
+    const result = await publishCast(castText);
     if (result.error) {
       return NextResponse.json(
         { success: false, error: result.error },

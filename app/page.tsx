@@ -101,34 +101,39 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
 
       {/* Headline */}
       <div style={{ padding: '22px 22px 0' }}>
-        <h1 style={{
-          fontFamily: SA.serif, fontSize: 34, fontWeight: 400, lineHeight: 0.98,
-          margin: 0, letterSpacing: -0.8, color: 'var(--text-primary)', textAlign: 'center',
+        <div style={{
+          fontFamily: SA.mono, fontSize: 11, letterSpacing: 2, color: 'var(--text-muted)',
+          textTransform: 'uppercase', marginBottom: 8,
         }}>
-          Why every investor<br />
-          should read <em>Morning Whispr.</em>
+          Why every investor should read
+        </div>
+        <h1 style={{
+          fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif',
+          fontSize: 48, fontWeight: 700, lineHeight: 1.0,
+          margin: 0, letterSpacing: -1, color: 'var(--text-primary)',
+        }}>
+          Morning Whispr.
         </h1>
       </div>
 
-      {/* Body copy: two-column editorial */}
-      <div style={{
-        padding: '14px 22px 0',
-        columnCount: 2, columnGap: 14,
-        columnRule: `0.5px solid ${SA.rule}`,
-        fontFamily: SA.serif, fontSize: 11.5, lineHeight: 1.38, color: 'var(--text-secondary)',
-        flex: 1,
-      }}>
-        <p style={{ margin: 0, textIndent: 12 }}>
-          Your AI agent watches DeFi, RWA, and Stablecoins
-          24/7 — so you don&apos;t have to.
-        </p>
-        <p style={{ margin: '8px 0 0', textIndent: 12 }}>
-          Every morning at 8:00 UTC, the signals that matter.
-          Personalized by your network.
-        </p>
-        <p style={{ margin: '8px 0 0', textIndent: 12 }}>
-          Cast to unlock. Free to share.
-        </p>
+      {/* Body copy: single column */}
+      <div style={{ padding: '18px 22px 0', flex: 1 }}>
+        <div style={{
+          fontFamily: SA.mono, fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)',
+          maxWidth: 320,
+        }}>
+          <p style={{ margin: 0 }}>
+            Your AI agent watches DeFi, RWA, and Stablecoins
+            24/7 — so you don&apos;t have to.
+          </p>
+          <p style={{ margin: '14px 0 0' }}>
+            Every morning at 8:00 UTC, the signals that matter.
+            Personalized by your network.
+          </p>
+          <p style={{ margin: '14px 0 0' }}>
+            Cast to unlock. Free to share.
+          </p>
+        </div>
       </div>
 
       {/* CTA */}

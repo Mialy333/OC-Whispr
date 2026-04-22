@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { EB_Garamond, IBM_Plex_Mono } from 'next/font/google';
+import { EB_Garamond, IBM_Plex_Mono, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { checkEnv } from '@/lib/env';
 import Providers from './providers';
@@ -19,6 +19,13 @@ const ibmMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-mono',
+  display: 'swap',
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-playfair',
   display: 'swap',
 });
 
@@ -48,7 +55,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ebGaramond.variable} ${ibmMono.variable}`}>
+    <html lang="en" className={`${ebGaramond.variable} ${ibmMono.variable} ${playfair.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();` }} />
       </head>

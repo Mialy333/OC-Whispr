@@ -227,7 +227,7 @@ function FeedScreen({
       <div style={{
         padding: '8px 18px', display: 'flex', gap: 6, alignItems: 'center',
         borderBottom: `0.5px solid ${dark ? '#332E22' : SA.rule}`,
-        background: dark ? '#16130E' : '#F5EFE2',
+        background: dark ? '#16130E' : '#F2ECDF',
       }}>
         {(['ALL', 'HIGH', 'BOOSTED'] as FilterKey[]).map((f) => (
           <button key={f} onClick={() => setFilter(f)} style={{

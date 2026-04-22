@@ -7,7 +7,7 @@ export const SA = {
   paper:         '#F2ECDF',
   paperDeep:     '#E8DFCC',
   platinum:      '#E4DCC8',
-  platinumHi:    '#F5EFE2',
+  platinumHi:    '#F2ECDF',
   platinumLo:    '#C9BFA6',
   rule:          '#9E9378',
   ink:           '#1A1814',

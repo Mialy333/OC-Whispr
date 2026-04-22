@@ -21,8 +21,9 @@
   --sa-terminal-green:#5BE36A;
 
   /* Semantic aliases — light mode */
-  --bg-primary:      var(--sa-paper);
-  --bg-secondary:    var(--sa-platinum-hi);
+  --bg-primary:      #F2ECDF;
+  --bg-secondary:    #F2ECDF;
+  --bg-tertiary:     #F2ECDF;
   --bg-terminal:     var(--sa-terminal);
   --text-primary:    var(--sa-ink);
   --text-secondary:  var(--sa-graphite);

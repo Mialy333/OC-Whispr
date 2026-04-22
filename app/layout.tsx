@@ -3,6 +3,7 @@ import { EB_Garamond, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { checkEnv } from '@/lib/env';
 import Providers from './providers';
+import BottomNav from '@/components/BottomNav';
 
 checkEnv();
 
@@ -40,8 +41,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();` }} />
       </head>
-      <body>
+      <body style={{ paddingBottom: 48 }}>
         <Providers>{children}</Providers>
+        <BottomNav />
       </body>
     </html>
   );

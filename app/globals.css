@@ -40,9 +40,9 @@
   --bg-primary:      var(--sa-ink);
   --bg-secondary:    #1F1B15;
   --bg-terminal:     #0F1B10;
-  --text-primary:    var(--sa-paper-deep);
-  --text-secondary:  #C8BC9E;
-  --text-muted:      var(--sa-ash);
+  --text-primary:    #F5F0E8;
+  --text-secondary:  #C8C2B4;
+  --text-muted:      #8C8479;
   --accent-phosphore:var(--sa-phosphor-glow);
   --accent-amber:    var(--sa-amber);
   --accent-red:      var(--sa-rust);

@@ -89,15 +89,29 @@ export default function OnboardingPage() {
               ...serif, fontSize: 36, fontWeight: 400, lineHeight: 1.0,
               letterSpacing: -1, color: ink, margin: '20px 0 10px',
             }}>
-              Connect your<br /><em>Farcaster</em> wallet.
+              Why every investor<br />should read <em>Morning Whispr.</em>
             </h1>
-            <p style={{
-              ...serif, fontSize: 13, lineHeight: 1.5, color: sec,
-              margin: 0, flex: 1,
-            }}>
-              Morning Whispr uses your Farcaster identity to personalize your alpha feed — surfacing signals your network
-              is already discussing. No wallet required to browse.
-            </p>
+            <div style={{ ...serif, fontSize: 13, lineHeight: 1.5, color: sec, flex: 1 }}>
+              <p style={{ margin: 0, textIndent: 12 }}>
+                Today, there are more onchain signals per minute than any
+                analyst can process in a day. The ones that actually move
+                markets are buried beneath ten thousand that don&apos;t.
+              </p>
+              <p style={{ margin: '10px 0 0', textIndent: 12 }}>
+                Morning Whispr monitors DeFiLlama, CoinGecko, and Token
+                Terminal continuously — detecting anomalies in RWA yields,
+                stablecoin pegs, and protocol revenue before they hit
+                your timeline.
+              </p>
+              <p style={{ margin: '10px 0 0', textIndent: 12 }}>
+                Your feed is personalized by your Farcaster network.
+                The people you trust surface what matters to you.
+              </p>
+              <p style={{ margin: '14px 0 0', fontStyle: 'italic', color: muted }}>
+                Cast a signal — unlock the next.
+                Intelligence that pays itself forward.
+              </p>
+            </div>
             <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <PButton
                 primary

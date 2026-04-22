@@ -7,6 +7,8 @@ import {
   SA, FRAME_W, NavBar, PButton, RainbowStripes,
   Toggle, Segmented,
 } from '@/components/ui';
+import RewardsCard from '@/components/RewardsCard';
+import DonateButton from '@/components/DonateButton';
 
 const mono = { fontFamily: SA.mono } as const;
 const serif = { fontFamily: SA.serif } as const;
@@ -163,6 +165,15 @@ export default function SettingsPage() {
             <PrefRow label="Network" right={<span style={{ ...mono, fontSize: 10, color: SA.ash }}>Base</span>} last />
           </div>
 
+          <SecHeader>Rewards</SecHeader>
+          <RewardsCard
+            fid={fid}
+            dark={dark}
+            panel={panel}
+            panelBorder={panelBorder}
+            inkC={inkC}
+          />
+
           <SecHeader>About</SecHeader>
           <div style={{ background: panel, border: `1px solid ${panelBorder}`, padding: '12px 14px' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -179,6 +190,11 @@ export default function SettingsPage() {
               &ldquo;Signal in, noise out. Think Different about your feed.&rdquo;
             </p>
           </div>
+
+          <div style={{ marginTop: 16 }}>
+            <DonateButton dark={dark} />
+          </div>
+
         </div>
       </div>
     </div>

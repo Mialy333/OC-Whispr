@@ -3,18 +3,11 @@ import type { Protocol, AlphaSignal } from '@/types';
 import { getUserFollowing, getRecentCastsByFids } from '@/lib/api/neynar';
 import type { RecentCast } from '@/lib/api/neynar';
 import { getStablecoinPrices, getRWATokens } from '@/lib/api/coingecko';
+import { updateCache } from '@/lib/agents/signal-cache';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 const MODEL = process.env.OPENROUTER_MODEL ?? 'google/gemini-2.0-flash-001';
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'StreamAlpha';
-
-// Server-side signal cache — survives within a single process lifetime.
-// Keyed by stable ID so unlock/cast routes can look up without re-analyzing.
-const signalCache = new Map<string, AlphaSignal>();
-
-export function getSignalById(id: string): AlphaSignal | undefined {
-  return signalCache.get(id);
-}
 
 function stableId(protocolId: string, title: string): string {
   return createHash('md5').update(protocolId + title).digest('hex').slice(0, 12);
@@ -198,9 +191,7 @@ ${JSON.stringify(rwaData, null, 2)}`;
     (a, b) => severityScore(b) - severityScore(a)
   );
 
-  for (const signal of sorted) {
-    signalCache.set(signal.id, signal);
-  }
+  updateCache(sorted, 'defillama+coingecko');
 
   return sorted;
 }

@@ -1,5 +1,32 @@
 const BASE = 'https://api.neynar.com/v2/farcaster';
 
+export async function publishCast(
+  text: string,
+  embedUrls: string[] = [],
+): Promise<{ hash?: string; error?: string }> {
+  const signerUuid = process.env.NEYNAR_SIGNER_UUID;
+  if (!signerUuid) return { error: 'NEYNAR_SIGNER_UUID not set' };
+  try {
+    const res = await fetch(`${BASE}/cast`, {
+      method: 'POST',
+      headers: {
+        'x-api-key': process.env.NEYNAR_API_KEY ?? '',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        signer_uuid: signerUuid,
+        text,
+        embeds: embedUrls.map((url) => ({ url })),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: JSON.stringify(data) };
+    return { hash: data.cast?.hash };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 function headers(): Record<string, string> {
   return {
     'x-api-key': process.env.NEYNAR_API_KEY ?? '',

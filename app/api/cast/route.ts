@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSignalById, generateCastSummary } from '@/lib/agents/orchestrator';
+import { generateCastSummary } from '@/lib/agents/orchestrator';
+import { getSignalById } from '@/lib/agents/signal-cache';
 
 export const dynamic = 'force-dynamic';
 

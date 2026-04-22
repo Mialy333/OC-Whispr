@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTopProtocols } from '@/lib/api/defillama';
 import { analyzeProtocols, curateForUser } from '@/lib/agents/orchestrator';
+import {
+  getCachedSignals, isCacheStale, ensureRefreshLoop,
+} from '@/lib/agents/signal-cache';
 import type { AlphaSignal } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-// TODO V2: verify fid matches Privy authenticated user
 function parseFid(raw: string | null): number | null {
   if (!raw) return null;
   const n = Number(raw);
@@ -16,6 +18,9 @@ function parseFid(raw: string | null): number | null {
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
 export async function GET(req: NextRequest) {
+  // Start background refresh loop (idempotent — only starts once per process)
+  ensureRefreshLoop();
+
   try {
     const fid = parseFid(req.nextUrl.searchParams.get('fid'));
 
@@ -23,15 +28,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid fid' }, { status: 400, headers: NO_STORE });
     }
 
-    const protocols = await getTopProtocols(20);
-    const rawSignals = await analyzeProtocols(protocols);
+    // Use cached signals if fresh; otherwise re-analyze (also refreshes cache)
+    let rawSignals: AlphaSignal[];
+    if (isCacheStale()) {
+      const protocols = await getTopProtocols(20);
+      rawSignals = await analyzeProtocols(protocols);
+    } else {
+      rawSignals = getCachedSignals();
+    }
 
     const signals: AlphaSignal[] = fid
       ? await curateForUser(fid, rawSignals)
       : rawSignals;
 
-    // Free tier: first 2 signals regardless of severity (post-curation order is personalised)
-    const free = signals.slice(0, 2);
+    const free   = signals.slice(0, 2);
     const locked = signals.slice(2);
 
     return NextResponse.json(

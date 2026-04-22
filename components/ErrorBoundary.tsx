@@ -21,14 +21,33 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return this.props.fallback ?? (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950 px-4">
-          <p className="text-sm font-semibold text-zinc-100">Something went wrong</p>
-          <p className="text-center text-xs text-zinc-500">{this.state.error.message}</p>
+        <div style={{
+          minHeight: '100vh', backgroundColor: '#F2ECDF',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 24px',
+        }}>
+          <div style={{
+            fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+            fontSize: 9, letterSpacing: 2, color: '#A83A26', textTransform: 'uppercase' as const,
+          }}>
+            ERR — RENDER FAILED
+          </div>
+          <div style={{
+            fontFamily: '"EB Garamond", Georgia, serif',
+            fontSize: 16, color: '#1A1814', textAlign: 'center' as const, maxWidth: 300,
+          }}>
+            {this.state.error.message}
+          </div>
           <button
             onClick={() => { this.setState({ error: null }); window.location.reload(); }}
-            className="rounded-lg bg-violet-600 px-5 py-2 text-xs font-semibold text-white hover:bg-violet-500"
+            style={{
+              marginTop: 8, border: '1px solid #9E9378', background: 'transparent',
+              fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+              fontSize: 10, letterSpacing: 1, color: '#3C3830',
+              padding: '6px 16px', cursor: 'pointer',
+            }}
           >
-            Reload
+            RELOAD
           </button>
         </div>
       );

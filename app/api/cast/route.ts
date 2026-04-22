@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Signal expired, refresh feed' }, { status: 404 });
     }
 
-    const castText = (await generateCastSummary(signal)).trim();
+    const raw = (await generateCastSummary(signal)).trim();
+    const castText = raw.length > 320 ? raw.slice(0, 317) + '...' : raw;
     const frameUrl = `${appUrl}/frame?signal=${encodeURIComponent(signalId)}`;
     const castUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(frameUrl)}`;
     const keyword = castText.split(' ').slice(0, 6).join(' ');

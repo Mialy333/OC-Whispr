@@ -40,6 +40,8 @@ export default function FramePage() {
 
         // Signal ready after feed is loaded — removes Farcaster loading screen
         await sdk.actions.ready();
+        // Prompt user to add the miniapp (enables back gesture on mobile)
+        await sdk.actions.addFrame().catch(() => {});
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load feed');
         // Still call ready on error so Farcaster doesn't hang

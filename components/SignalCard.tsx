@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import sdk from '@farcaster/miniapp-sdk';
 import type { AlphaSignal } from '@/types';
 import { SA, Sparkline, SeverityChip, seededChart } from '@/components/ui';
 
@@ -57,8 +58,17 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
     }
   };
 
-  const handleCastAndUnlock = () => {
-    window.open(castUrl, '_blank', 'noopener,noreferrer');
+  const handleCastAndUnlock = async () => {
+    try {
+      const ctx = await sdk.context;
+      if (ctx !== null) {
+        await sdk.actions.openUrl(castUrl);
+      } else {
+        window.open(castUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch {
+      window.open(castUrl, '_blank', 'noopener,noreferrer');
+    }
     setPollCount(0);
     setState('polling');
   };

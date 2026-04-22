@@ -115,7 +115,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
         padding: '14px 22px 0',
         columnCount: 2, columnGap: 14,
         columnRule: `0.5px solid ${SA.rule}`,
-        fontFamily: SA.serif, fontSize: 11.5, lineHeight: 1.38, color: SA.graphite,
+        fontFamily: SA.serif, fontSize: 11.5, lineHeight: 1.38, color: 'var(--text-secondary)',
         flex: 1,
       }}>
         <p style={{ margin: 0, textIndent: 12 }}>

@@ -102,13 +102,13 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
       {/* Headline */}
       <div style={{ padding: '22px 22px 0' }}>
         <div style={{
-          fontFamily: SA.mono, fontSize: 11, letterSpacing: 2, color: 'var(--text-muted)',
+          fontFamily: SA.serif, fontSize: 11, letterSpacing: 2, color: 'var(--text-muted)',
           textTransform: 'uppercase', marginBottom: 8,
         }}>
           Why every investor should read
         </div>
         <h1 style={{
-          fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif',
+          fontFamily: SA.serif,
           fontSize: 48, fontWeight: 700, lineHeight: 1.0,
           margin: 0, letterSpacing: -1, color: 'var(--text-primary)',
         }}>
@@ -119,7 +119,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
       {/* Body copy: single column */}
       <div style={{ padding: '18px 22px 0', flex: 1 }}>
         <div style={{
-          fontFamily: SA.mono, fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)',
+          fontFamily: SA.serif, fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)',
           maxWidth: 320,
         }}>
           <p style={{ margin: 0 }}>

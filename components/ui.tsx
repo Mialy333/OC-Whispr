@@ -51,16 +51,13 @@ interface TitleBarProps {
 }
 
 export function TitleBar({ title, right, lights = true, dark = false }: TitleBarProps) {
-  const bg = dark
-    ? '#1F1B15'
-    : `repeating-linear-gradient(180deg, ${SA.platinumHi} 0 1px, ${SA.platinum} 1px 2px)`;
+  const bg = dark ? '#1F1B15' : 'var(--bg-main)';
   return (
     <div style={{
       height: 28, display: 'flex', alignItems: 'center', gap: 8,
       padding: '0 10px',
       background: bg,
-      borderBottom: `1px solid ${dark ? '#332E22' : SA.platinumLo}`,
-      boxShadow: dark ? 'none' : `inset 0 -1px 0 ${SA.platinumHi}, inset 0 1px 0 ${SA.platinumHi}`,
+      borderBottom: `1px solid ${dark ? '#332E22' : 'rgba(26,24,20,0.12)'}`,
       fontFamily: SA.sans, fontSize: 11, color: dark ? SA.paperDeep : SA.graphite,
       flexShrink: 0,
     }}>
@@ -292,8 +289,8 @@ export function TabBar({ active, onNavigate, dark = false }: TabBarProps) {
   return (
     <div style={{
       height: 40, flexShrink: 0,
-      background: dark ? '#1F1B15' : `linear-gradient(180deg, ${SA.platinumHi} 0%, ${SA.platinum} 100%)`,
-      borderTop: `1px solid ${dark ? '#332E22' : SA.platinumLo}`,
+      background: dark ? '#1F1B15' : 'var(--bg-main)',
+      borderTop: `1px solid ${dark ? '#332E22' : 'rgba(26,24,20,0.12)'}`,
       display: 'flex', alignItems: 'center', justifyContent: 'space-around',
       padding: '0 8px',
     }}>
@@ -328,8 +325,8 @@ export function NavBar({
   return (
     <div style={{
       height: 32, flexShrink: 0,
-      background: dark ? '#1F1B15' : `linear-gradient(180deg, ${SA.platinumHi} 0%, ${SA.platinum} 100%)`,
-      borderBottom: `1px solid ${dark ? '#332E22' : SA.platinumLo}`,
+      background: dark ? '#1F1B15' : 'var(--bg-main)',
+      borderBottom: `1px solid ${dark ? '#332E22' : 'rgba(26,24,20,0.12)'}`,
       display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px',
       fontFamily: SA.sans, fontSize: 11, color: dark ? SA.paperDeep : SA.ink,
     }}>
@@ -385,7 +382,7 @@ export function AccuracyBar({ value, w = 56 }: { value: number; w?: number }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
       <div style={{
-        width: w, height: 6, background: SA.platinumLo,
+        width: w, height: 6, background: 'rgba(26,24,20,0.1)',
         position: 'relative', border: `0.5px solid ${SA.rule}`,
       }}>
         <div style={{
@@ -404,18 +401,17 @@ export function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{
       width: 36, height: 20, borderRadius: 10,
-      border: `1px solid ${on ? SA.aquaDeep : SA.platinumLo}`,
+      border: `1px solid ${on ? SA.aquaDeep : 'rgba(26,24,20,0.2)'}`,
       background: on
         ? `linear-gradient(180deg, #6E9BD0, ${SA.aquaDeep})`
-        : `linear-gradient(180deg, ${SA.platinumLo}, ${SA.rule})`,
+        : 'var(--bg-main)',
       cursor: 'pointer', position: 'relative', padding: 0,
-      boxShadow: `inset 0 1px 1px rgba(0,0,0,.2)`,
       flexShrink: 0,
     }}>
       <span style={{
         position: 'absolute', top: 1, left: on ? 17 : 1,
         width: 16, height: 16, borderRadius: 8,
-        background: `radial-gradient(circle at 30% 30%, #fff, ${SA.platinumHi} 70%, ${SA.platinumLo})`,
+        background: 'var(--bg-main)',
         border: `0.5px solid ${SA.rule}`,
         boxShadow: `0 1px 2px rgba(0,0,0,.25)`,
         transition: 'left .18s',
@@ -433,15 +429,15 @@ export function Segmented({
   onChange: (v: string) => void;
 }) {
   return (
-    <div style={{ display: 'flex', border: `1px solid ${SA.platinumLo}`, borderRadius: 10, overflow: 'hidden' }}>
+    <div style={{ display: 'flex', border: `1px solid rgba(26,24,20,0.12)`, borderRadius: 10, overflow: 'hidden' }}>
       {options.map((o, i) => (
         <button key={o} onClick={() => onChange(o)} style={{
           background: value === o
             ? `linear-gradient(180deg, ${SA.aqua}, ${SA.aquaDeep})`
-            : `linear-gradient(180deg, ${SA.platinumHi}, ${SA.platinum})`,
+            : 'var(--bg-main)',
           color: value === o ? '#fff' : SA.ink,
           border: 'none',
-          borderLeft: i > 0 ? `0.5px solid ${SA.platinumLo}` : 'none',
+          borderLeft: i > 0 ? `0.5px solid rgba(26,24,20,0.12)` : 'none',
           padding: '3px 9px',
           fontFamily: SA.sans, fontSize: 10, fontWeight: 600, letterSpacing: 0.3,
           cursor: 'pointer',

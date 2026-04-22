@@ -48,8 +48,8 @@ export default function SettingsPage() {
 
   const paper      = dark ? SA.ink       : SA.paper;
   const inkC       = dark ? SA.paperDeep : SA.ink;
-  const panel      = dark ? '#1A1814'    : SA.platinumHi;
-  const panelBorder = dark ? '#332E22'   : SA.platinumLo;
+  const panel      = dark ? '#1A1814'    : 'var(--bg-main)';
+  const panelBorder = dark ? '#332E22'   : 'rgba(26,24,20,0.12)';
   const ruleC      = dark ? '#332E22'    : SA.rule;
 
   function PrefRow({ label, right, last }: { label: string; right: React.ReactNode; last?: boolean }) {

@@ -201,7 +201,7 @@ function FeedScreen({
       <div className="sa-masthead" style={{
         padding: '12px 18px 10px',
         borderBottom: `1px solid ${dark ? '#332E22' : SA.ink}`,
-        background: dark ? '#1F1B15' : SA.platinumHi,
+        background: dark ? '#1F1B15' : 'var(--bg-main)',
       }}>
         <div>
           <div style={{ fontFamily: SA.mono, fontSize: 9, letterSpacing: 2, color: dark ? SA.ash : SA.graphite }}>
@@ -214,8 +214,8 @@ function FeedScreen({
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           <button onClick={onToggleDark} title="Toggle theme" style={{
             width: 22, height: 22, borderRadius: 11,
-            border: `1px solid ${SA.platinumLo}`, cursor: 'pointer',
-            background: dark ? SA.ink : `linear-gradient(180deg, #fff, ${SA.platinum})`,
+            border: `1px solid rgba(26,24,20,0.2)`, cursor: 'pointer',
+            background: dark ? SA.ink : 'var(--bg-main)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 10, color: dark ? SA.paperDeep : SA.ink,
           }}>{dark ? '☾' : '☀'}</button>
@@ -336,7 +336,7 @@ function SignalDetailScreen({
         {/* Pull-quote data block */}
         <div style={{
           padding: '14px 18px',
-          background: dark ? '#1A1814' : SA.platinumHi,
+          background: dark ? '#1A1814' : 'var(--bg-main)',
           borderBottom: `0.5px solid ${dark ? '#332E22' : SA.rule}`,
         }}>
           <div style={{ fontFamily: SA.mono, fontSize: 9, letterSpacing: 2, color: SA.ash, marginBottom: 4 }}>DATAPOINT</div>
@@ -358,7 +358,7 @@ function SignalDetailScreen({
             <span>LIVE RANGE</span>
           </div>
           <div style={{
-            background: dark ? '#0F1B10' : '#F8F4E8',
+            background: dark ? '#0F1B10' : 'var(--bg-main)',
             border: `1px solid ${dark ? '#26291B' : SA.rule}`,
             padding: 6,
           }}>
@@ -402,7 +402,7 @@ function SignalDetailScreen({
             }}>
               <div style={{
                 width: 26, height: 26, borderRadius: 13, flexShrink: 0,
-                background: `linear-gradient(135deg, ${c.color}, ${SA.platinumLo})`,
+                background: c.color,
                 border: `1px solid ${SA.ink}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: SA.serif, fontSize: 12, fontWeight: 600, color: SA.paper,
@@ -424,8 +424,8 @@ function SignalDetailScreen({
       {/* Action bar */}
       <div style={{
         flexShrink: 0, padding: '10px 14px',
-        background: dark ? '#1F1B15' : `linear-gradient(180deg, ${SA.platinumHi} 0%, ${SA.platinum} 100%)`,
-        borderTop: `1px solid ${dark ? '#332E22' : SA.platinumLo}`,
+        background: dark ? '#1F1B15' : 'var(--bg-main)',
+        borderTop: `1px solid ${dark ? '#332E22' : 'rgba(26,24,20,0.12)'}`,
         display: 'flex', gap: 8, alignItems: 'center',
       }}>
         <PButton small>♡ Save</PButton>
@@ -456,7 +456,7 @@ function LeaderboardScreen({ onBack, dark }: { onBack: () => void; dark: boolean
         background: medal === 'gold'
           ? `linear-gradient(135deg, #F5D047, ${SA.amber})`
           : medal === 'silver'
-          ? `linear-gradient(135deg, ${SA.platinumHi}, ${SA.platinumLo})`
+          ? 'var(--bg-main)'
           : `linear-gradient(135deg, #D89070, ${SA.rust})`,
         border: `1px solid ${SA.ink}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -470,8 +470,8 @@ function LeaderboardScreen({ onBack, dark }: { onBack: () => void; dark: boolean
       </div>
       <div style={{
         width: '80%',
-        background: dark ? '#1A1814' : `linear-gradient(180deg, ${SA.platinumHi} 0%, ${SA.platinum} 100%)`,
-        border: `1px solid ${SA.platinumLo}`,
+        background: dark ? '#1A1814' : 'var(--bg-main)',
+        border: `1px solid rgba(26,24,20,0.12)`,
         height: h,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: SA.serif, fontSize: 14, fontWeight: 500, color: dark ? SA.paperDeep : SA.graphite,
@@ -486,10 +486,10 @@ function LeaderboardScreen({ onBack, dark }: { onBack: () => void; dark: boolean
         onBack={onBack}
         dark={dark}
         right={
-          <div style={{ display: 'flex', gap: 1, border: `1px solid ${SA.platinumLo}`, borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', gap: 1, border: `1px solid rgba(26,24,20,0.12)`, borderRadius: 10, overflow: 'hidden' }}>
             {['24H', '7D', 'ALL'].map((s) => (
               <button key={s} onClick={() => setScope(s)} style={{
-                background: scope === s ? SA.aqua : SA.platinum,
+                background: scope === s ? SA.aqua : 'var(--bg-main)',
                 color: scope === s ? '#fff' : SA.ink,
                 border: 'none', padding: '3px 8px', fontSize: 10,
                 fontFamily: SA.sans, fontWeight: 600, cursor: 'pointer',
@@ -596,8 +596,8 @@ function SettingsScreen({
 
   const paper = dark ? SA.ink : SA.paper;
   const inkC = dark ? SA.paperDeep : SA.ink;
-  const panel = dark ? '#1A1814' : SA.platinumHi;
-  const panelBorder = dark ? '#332E22' : SA.platinumLo;
+  const panel = dark ? '#1A1814' : 'var(--bg-main)';
+  const panelBorder = dark ? '#332E22' : 'rgba(26,24,20,0.12)';
 
   const handle = user?.handle ?? '@you.eth';
   const fid = user?.fid ?? 0;

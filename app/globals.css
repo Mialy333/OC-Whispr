@@ -20,6 +20,9 @@
   --sa-terminal:     #0C1A0C;
   --sa-terminal-green:#5BE36A;
 
+  /* Single unified background */
+  --bg-main:         #F2ECDF;
+
   /* Semantic aliases — light mode */
   --bg-primary:      #F2ECDF;
   --bg-secondary:    #F2ECDF;

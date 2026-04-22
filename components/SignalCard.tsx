@@ -201,7 +201,7 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
             display: 'flex', flexDirection: 'column', gap: 10,
             background: dark ? '#1A1814' : SA.paper,
             padding: 16,
-            border: `1px solid ${SA.platinumLo}`,
+            border: `1px solid rgba(26,24,20,0.12)`,
           }}
         >
           <div style={{ fontFamily: SA.mono, fontSize: 9, letterSpacing: 1.5, color: SA.ash, textTransform: 'uppercase' }}>
@@ -215,7 +215,7 @@ export default function SignalCard({ signal, locked, fid, dark = false, onOpen }
             style={{
               fontFamily: SA.mono, fontSize: 11, lineHeight: 1.5,
               color: dark ? SA.paperDeep : SA.ink,
-              background: dark ? '#0F1B10' : SA.platinumHi,
+              background: dark ? '#0F1B10' : 'var(--bg-main)',
               border: `1px solid ${ruleC}`,
               padding: 10, resize: 'none', outline: 'none', width: '100%',
               borderRadius: 0,
@@ -239,10 +239,10 @@ function PButtonInline({ children, primary, onClick }: { children: React.ReactNo
   return (
     <button onClick={onClick} style={{
       appearance: 'none',
-      border: `1px solid ${primary ? SA.aquaDeep : SA.platinumLo}`,
+      border: `1px solid ${primary ? SA.aquaDeep : 'rgba(26,24,20,0.2)'}`,
       background: primary
         ? `linear-gradient(180deg, #6E9BD0 0%, ${SA.aqua} 55%, ${SA.aquaDeep} 100%)`
-        : `linear-gradient(180deg, ${SA.platinumHi} 0%, ${SA.platinum} 55%, ${SA.platinumLo} 100%)`,
+        : 'var(--bg-main)',
       color: primary ? '#fff' : SA.ink,
       fontFamily: SA.sans, fontWeight: 600, fontSize: 11,
       padding: '4px 12px', borderRadius: 10,

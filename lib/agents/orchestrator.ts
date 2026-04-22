@@ -46,22 +46,32 @@ async function chat(messages: OpenRouterMessage[], maxTokens = 512, temperature?
   const body: Record<string, unknown> = { model: MODEL, messages, max_tokens: maxTokens };
   if (temperature !== undefined) body.temperature = temperature;
 
-  const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const RETRYABLE = new Set([429, 502, 503, 504]);
+  let lastError = '';
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`OpenRouter ${res.status}: ${err}`);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
+
+    const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return (data.choices?.[0]?.message?.content ?? '').trim();
+    }
+
+    lastError = await res.text();
+    if (!RETRYABLE.has(res.status)) break;
+    console.warn(`[orchestrator] OpenRouter ${res.status}, attempt ${attempt + 1}/3`);
   }
 
-  const data = await res.json();
-  return (data.choices?.[0]?.message?.content ?? '').trim();
+  throw new Error(`OpenRouter ${lastError}`);
 }
 
 function parseSignalsFromLLM(raw: string, protocols: Protocol[]): AlphaSignal[] {

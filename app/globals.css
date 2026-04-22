@@ -134,6 +134,26 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ─── Responsive breakpoints ─── */
+
+/* Frame — Warpcast mini-app */
+@media (max-width: 424px) {
+  .signal-card  { padding: 10px 12px; }
+  .signal-title { font-size: 15px; }
+  .data-point   { font-size: 11px; }
+  .bottom-nav   { height: 48px; padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Mobile browser */
+@media (max-width: 768px) {
+  .feed-container { max-width: 100%; padding: 0 12px; }
+}
+
+/* Desktop */
+@media (min-width: 769px) {
+  .feed-container { max-width: 680px; margin: 0 auto; }
+}
+
 /* ─── Utilities ─── */
 .grid-bg {
   background-image:

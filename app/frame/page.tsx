@@ -3,7 +3,18 @@
 import { useEffect, useState } from 'react';
 import sdk from '@farcaster/miniapp-sdk';
 import SignalCard from '@/components/SignalCard';
+import AdvisorFlow from '@/components/AdvisorFlow';
+import ProfileView from '@/components/ProfileView';
+import { SA } from '@/components/ui';
 import type { AlphaSignal } from '@/types';
+
+type View = 'feed' | 'advisor' | 'profile';
+
+const TABS: { id: View; icon: string; label: string }[] = [
+  { id: 'feed',    icon: '▤', label: 'Feed'    },
+  { id: 'advisor', icon: '◈', label: 'Advisor' },
+  { id: 'profile', icon: '◉', label: 'Profile' },
+];
 
 interface FeedResponse {
   free: AlphaSignal[];
@@ -12,10 +23,11 @@ interface FeedResponse {
 }
 
 export default function FramePage() {
-  const [fid, setFid] = useState<number | null>(null);
-  const [feed, setFeed] = useState<FeedResponse | null>(null);
+  const [fid, setFid]     = useState<number | null>(null);
+  const [feed, setFeed]   = useState<FeedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [view, setView]   = useState<View>('feed');
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +38,6 @@ export default function FramePage() {
         const userFid = ctx?.user?.fid ?? null;
         if (!cancelled) setFid(userFid);
 
-        // No FID means opened outside Farcaster — show fallback, don't signal ready
         if (!userFid) {
           if (!cancelled) setLoading(false);
           return;
@@ -38,13 +49,10 @@ export default function FramePage() {
         if (data.error) throw new Error(data.error);
         setFeed(data);
 
-        // Signal ready after feed is loaded — removes Farcaster loading screen
         await sdk.actions.ready();
-        // Prompt user to add the miniapp (enables back gesture on mobile)
         await sdk.actions.addFrame().catch(() => {});
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load feed');
-        // Still call ready on error so Farcaster doesn't hang
         await sdk.actions.ready().catch(() => {});
       } finally {
         if (!cancelled) setLoading(false);
@@ -55,7 +63,6 @@ export default function FramePage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Opened outside Farcaster
   if (!loading && fid === null) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950 px-4">
@@ -84,31 +91,101 @@ export default function FramePage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
-        <p className="text-xs text-red-400">{error}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-zinc-950 px-3 py-4">
-      <div className="w-full flex flex-col" style={{ gap: 'clamp(8px, 2vw, 12px)' }}>
-        {feed?.free.map((signal) => (
-          <SignalCard key={signal.id} signal={signal} locked={false} fid={fid!} />
-        ))}
-
-        {(feed?.locked.length ?? 0) > 0 && (
-          <p className="px-1 font-mono text-xs text-zinc-600 uppercase tracking-widest">
-            Locked · Cast to unlock
-          </p>
+    <div style={{
+      width: '100%',
+      maxWidth: '424px',
+      margin: '0 auto',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      backgroundColor: 'var(--bg-primary)',
+      color: 'var(--text-primary)',
+      fontFamily: SA.mono,
+    }}>
+      {/* Scrollable content area */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {view === 'feed' && (
+          <div className="feed-container">
+            {error && (
+              <div style={{ padding: '10px 14px' }}>
+                <span style={{ fontFamily: SA.mono, fontSize: 10, color: SA.rust }}>ERR: {error}</span>
+              </div>
+            )}
+            {feed?.free.map((signal) => (
+              <SignalCard key={signal.id} signal={signal} locked={false} fid={fid!} />
+            ))}
+            {(feed?.locked.length ?? 0) > 0 && (
+              <p style={{
+                fontFamily: SA.mono, fontSize: 9, color: SA.ash,
+                textTransform: 'uppercase', letterSpacing: 2, padding: '8px 14px',
+              }}>
+                Locked · Cast to unlock
+              </p>
+            )}
+            {feed?.locked.map((signal) => (
+              <SignalCard key={signal.id} signal={signal} locked={true} fid={fid!} />
+            ))}
+            {!error && !feed && (
+              <div style={{ padding: '32px 14px', textAlign: 'center' }}>
+                <span style={{ fontFamily: SA.mono, fontSize: 10, color: SA.ash, letterSpacing: 2 }}>
+                  NO SIGNALS YET
+                </span>
+              </div>
+            )}
+          </div>
         )}
 
-        {feed?.locked.map((signal) => (
-          <SignalCard key={signal.id} signal={signal} locked={true} fid={fid!} />
-        ))}
+        {view === 'advisor' && (
+          <AdvisorFlow fid={fid ?? undefined} onBack={() => setView('feed')} />
+        )}
+
+        {view === 'profile' && fid && (
+          <ProfileView fid={fid} />
+        )}
       </div>
+
+      {/* Bottom navbar — always visible */}
+      <nav className="bottom-nav" style={{
+        flexShrink: 0,
+        height: '48px',
+        display: 'flex',
+        alignItems: 'stretch',
+        backgroundColor: 'var(--bg-primary)',
+        borderTop: '1px solid var(--border)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setView(tab.id)}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              background: 'transparent',
+              border: 'none',
+              borderTop: view === tab.id
+                ? '2px solid var(--accent-phosphore)'
+                : '2px solid transparent',
+              cursor: 'pointer',
+              fontFamily: SA.mono,
+              fontSize: 9,
+              letterSpacing: 0.5,
+              color: view === tab.id ? 'var(--accent-phosphore)' : 'var(--text-muted)',
+              transition: 'color .15s',
+              paddingTop: 2,
+            }}
+          >
+            <span style={{ fontSize: 14, lineHeight: 1 }}>{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

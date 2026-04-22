@@ -1,12 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useRouter } from 'next/navigation';
 import { SA, PButton, RainbowStripes, SeverityChip } from '@/components/ui';
 
 const mono = { fontFamily: SA.mono } as const;
 const serif = { fontFamily: SA.serif } as const;
+
+function useDark() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const read = () => setDark(document.documentElement.getAttribute('data-theme') === 'dark');
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+}
 
 const PREVIEW_SIGNALS = [
   {
@@ -25,6 +37,7 @@ export default function OnboardingPage() {
   const { ready, authenticated, login } = usePrivy();
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const dark = useDark();
 
   const handleConnect = async () => {
     if (!authenticated) {
@@ -35,14 +48,15 @@ export default function OnboardingPage() {
 
   const handleFinish = () => router.push('/');
 
-  const paper = 'var(--bg-primary)';
-  const ink = 'var(--text-primary)';
-  const muted = 'var(--text-muted)';
-  const border = 'var(--border)';
+  const paper  = dark ? SA.ink       : SA.paper;
+  const ink    = dark ? '#F5F0E8'    : SA.ink;
+  const sec    = dark ? '#C8C2B4'    : SA.graphite;
+  const muted  = dark ? '#8C8479'    : SA.ash;
+  const border = dark ? '#332E22'    : SA.rule;
 
   return (
     <div style={{
-      minHeight: '100vh', backgroundColor: '#1A1814',
+      minHeight: '100vh', backgroundColor: dark ? '#0F0D0A' : '#D8D0C0',
       display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
     }}>
       <div style={{
@@ -78,7 +92,7 @@ export default function OnboardingPage() {
               Connect your<br /><em>Farcaster</em> wallet.
             </h1>
             <p style={{
-              ...serif, fontSize: 13, lineHeight: 1.5, color: 'var(--text-secondary)',
+              ...serif, fontSize: 13, lineHeight: 1.5, color: sec,
               margin: 0, flex: 1,
             }}>
               Stream Alpha uses your Farcaster identity to personalize your alpha feed — surfacing signals your network
@@ -187,7 +201,7 @@ export default function OnboardingPage() {
                 }}>{item.n}</div>
                 <div>
                   <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: ink, letterSpacing: 0.3, marginBottom: 3 }}>{item.title}</div>
-                  <div style={{ ...serif, fontSize: 12.5, lineHeight: 1.45, color: 'var(--text-secondary)' }}>{item.body}</div>
+                  <div style={{ ...serif, fontSize: 12.5, lineHeight: 1.45, color: sec }}>{item.body}</div>
                 </div>
               </div>
             ))}

@@ -32,12 +32,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Stream Alpha',
-  description: 'Personalized Web3/DeFi alpha feed, curated by AI',
+  title: 'Morning Whispr',
+  description: 'Your daily TradFi/DeFi intelligence briefing, powered by AI on Farcaster',
+  openGraph: {
+    title: 'Morning Whispr',
+    description: 'AI agent monitoring DeFi, RWA & Stablecoin protocols 24/7',
+  },
   other: {
     'fc:frame': 'vNext',
     'fc:frame:image': `${appUrl}/frame/opengraph-image`,
-    'fc:frame:button:1': 'Open Alpha Feed',
+    'fc:frame:button:1': 'Open Morning Whispr',
     'fc:frame:post_url': `${appUrl}/api/frame`,
   },
 };

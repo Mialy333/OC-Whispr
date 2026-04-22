@@ -6,11 +6,11 @@
   },
   "frame": {
     "version": "1",
-    "name": "Stream Alpha",
+    "name": "Morning Whispr",
     "iconUrl": "https://farhack2026.vercel.app/icon.png",
     "homeUrl": "https://farhack2026.vercel.app/frame",
     "imageUrl": "https://farhack2026.vercel.app/frame/opengraph-image",
-    "buttonTitle": "Open Alpha Feed",
+    "buttonTitle": "Open Morning Whispr",
     "splashImageUrl": "https://farhack2026.vercel.app/icon.png",
     "splashBackgroundColor": "#09090b"
   }

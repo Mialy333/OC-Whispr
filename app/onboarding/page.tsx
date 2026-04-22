@@ -95,7 +95,7 @@ export default function OnboardingPage() {
               ...serif, fontSize: 13, lineHeight: 1.5, color: sec,
               margin: 0, flex: 1,
             }}>
-              Stream Alpha uses your Farcaster identity to personalize your alpha feed — surfacing signals your network
+              Morning Whispr uses your Farcaster identity to personalize your alpha feed — surfacing signals your network
               is already discussing. No wallet required to browse.
             </p>
             <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 10 }}>

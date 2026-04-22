@@ -12,7 +12,8 @@
       "Bash(rtk grep *)",
       "Bash(rtk curl *)",
       "Bash(vercel logs *)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); a=d['accountAssociation']; print\\('header:', a['header'][:20]+'...'\\); print\\('signed:', bool\\(a['signature']\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); a=d['accountAssociation']; print\\('header:', a['header'][:20]+'...'\\); print\\('signed:', bool\\(a['signature']\\)\\)\")",
+      "Bash(vercel --prod)"
     ]
   }
 }

@@ -31,11 +31,11 @@ export default function OGImage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ fontSize: '52px' }}>🔍</span>
             <span style={{ fontSize: '52px', fontWeight: 700, color: '#f4f4f5', letterSpacing: '-1px' }}>
-              Alpha Feed
+              Morning Whispr
             </span>
           </div>
           <p style={{ fontSize: '22px', color: '#a1a1aa', margin: 0, lineHeight: 1.5 }}>
-            Live Web3 business signals,<br />curated by AI
+            TradFi/DeFi Intelligence<br />Daily at 8:00 UTC
           </p>
           <div
             style={{

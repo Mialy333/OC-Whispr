@@ -10,6 +10,6 @@ const REQUIRED_KEYS = [
 export function checkEnv() {
   const missing = REQUIRED_KEYS.filter((k) => !process.env[k]);
   if (missing.length > 0) {
-    console.warn(`[stream-alpha] Missing required env vars: ${missing.join(', ')}`);
+    console.warn(`[morning-whispr] Missing required env vars: ${missing.join(', ')}`);
   }
 }

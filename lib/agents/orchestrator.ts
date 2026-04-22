@@ -11,7 +11,7 @@ import { updateCache } from '@/lib/agents/signal-cache';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 const MODEL = process.env.OPENROUTER_MODEL ?? 'google/gemini-2.0-flash-001';
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'StreamAlpha';
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'MorningWhispr';
 
 function stableId(protocolId: string, title: string): string {
   return createHash('md5').update(protocolId + title).digest('hex').slice(0, 12);

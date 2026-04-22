@@ -60,7 +60,7 @@ export default function FramePage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950 px-4">
         <p className="text-2xl">🔍</p>
-        <p className="text-sm font-semibold text-zinc-100">Alpha Feed</p>
+        <p className="text-sm font-semibold text-zinc-100">Morning Whispr</p>
         <p className="text-center text-xs text-zinc-500">
           Open this link inside Farcaster to access your personalized alpha feed.
         </p>

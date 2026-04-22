@@ -74,7 +74,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
               position: 'absolute', inset: 6, color: SA.terminalGreen,
               fontFamily: SA.mono, fontSize: 7.5, lineHeight: 1.35, letterSpacing: 0.3,
             }}>
-              <div>STREAM ALPHA v1.0</div>
+              <div>MORNING WHISPR v1.0</div>
               <div>────────────────────</div>
               <div>&gt; SCAN_DEFI.RUN</div>
               <div style={{ color: '#C8E8A8' }}>▲ ONDO  +18%</div>
@@ -123,7 +123,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
           Unfortunately, the ones that actually matter are buried beneath ten thousand that don&apos;t.
         </p>
         <p style={{ margin: '8px 0 0', textIndent: 12 }}>
-          Stream Alpha reads DeFiLlama, CoinGecko and Token Terminal continuously, ranks anomalies,
+          Morning Whispr reads DeFiLlama, CoinGecko and Token Terminal continuously, ranks anomalies,
           then curates what <em>your</em> network is already talking about.
         </p>
         <p style={{ margin: '8px 0 0', textIndent: 12 }}>
@@ -141,7 +141,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
         </PButton>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontFamily: SA.mono, fontSize: 9, color: SA.ash, letterSpacing: 0.6 }}>
           <RainbowStripes h={8} w={16} />
-          <span>STREAM ALPHA™ · EST. 2026 · v1.0</span>
+          <span>MORNING WHISPR™ · EST. 2026 · v1.0</span>
         </div>
       </div>
     </div>
@@ -180,7 +180,7 @@ function FeedScreen({
     'LIVE SIGNALS · AI-CURATED · UPDATED CONTINUOUSLY',
     'CAST A SIGNAL → UNLOCK THE NEXT',
     'DEFILLAMA · COINGECKO · TOKEN TERMINAL',
-    'POWERED BY STREAM ALPHA v1.0',
+    'POWERED BY MORNING WHISPR v1.0',
   ];
 
   return (
@@ -190,7 +190,7 @@ function FeedScreen({
         dark={dark}
         title={
           <span style={{ fontFamily: SA.serif, fontSize: 13, fontStyle: 'italic', letterSpacing: -0.2 }}>
-            Stream Alpha <span style={{ fontStyle: 'normal', color: SA.ash, fontSize: 10 }}>· feed</span>
+            Morning Whispr <span style={{ fontStyle: 'normal', color: SA.ash, fontSize: 10 }}>· feed</span>
           </span>
         }
         right={<span style={{ color: SA.phosphorGlow }}>● LIVE</span>}
@@ -690,7 +690,7 @@ function SettingsScreen({
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <RainbowStripes h={18} w={38} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: SA.serif, fontSize: 15, fontStyle: 'italic', color: inkC, letterSpacing: -0.2 }}>Stream Alpha</div>
+              <div style={{ fontFamily: SA.serif, fontSize: 15, fontStyle: 'italic', color: inkC, letterSpacing: -0.2 }}>Morning Whispr</div>
               <div style={{ fontFamily: SA.mono, fontSize: 9, color: SA.ash, letterSpacing: 0.8 }}>v1.0.0 · BUILD 260422 · © 2026</div>
             </div>
           </div>

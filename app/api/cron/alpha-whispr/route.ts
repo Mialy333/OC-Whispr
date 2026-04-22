@@ -3,6 +3,7 @@ import { getTopProtocols, getRWAProtocols, getStablecoinData } from '@/lib/api/d
 import { analyzeProtocols, generateAlphaWhispr } from '@/lib/agents/orchestrator';
 import { publishCast } from '@/lib/api/neynar';
 import { recordPublishedCast } from '@/lib/agents/signal-cache';
+import { kv } from '@vercel/kv';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -42,7 +43,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    if (result.hash) recordPublishedCast(result.hash);
+    if (result.hash) {
+      recordPublishedCast(result.hash);
+      await Promise.all([
+        kv.set('lastCastHash', result.hash),
+        kv.set('lastPublished', new Date().toISOString()),
+        kv.incr('totalPublished'),
+      ]);
+    }
 
     return NextResponse.json({
       success: true,

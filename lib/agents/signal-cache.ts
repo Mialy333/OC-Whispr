@@ -58,8 +58,8 @@ export function isCacheStale(): boolean {
 
 export function getStatus() {
   return {
-    botUsername:      process.env.BOT_USERNAME ?? null,
-    botFid:           process.env.BOT_FID ?? null,
+    botUsername:      process.env.BOT_USERNAME?.trim() ?? null,
+    botFid:           process.env.BOT_FID?.trim() ?? null,
     lastPublished:    state.lastRun ? new Date(state.lastRun).toISOString() : null,
     nextPublish:      '08:00 UTC daily',
     totalPublished:   state.totalPublished,
@@ -94,7 +94,7 @@ export function updateCache(signals: AlphaSignal[], source = 'defillama+coingeck
 
 async function broadcastNewHighSignals(signals: AlphaSignal[]): Promise<void> {
   const appUrl = APP_URL();
-  if (!appUrl || !process.env.NEYNAR_SIGNER_UUID) return;
+  if (!appUrl || !process.env.NEYNAR_BOT_UUID) return;
 
   const highSignals = signals.filter(
     (s) => s.severity === 'high' && !state.broadcastedIds.has(s.id),

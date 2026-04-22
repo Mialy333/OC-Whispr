@@ -27,7 +27,7 @@ type Asset = UserProfile['preferredAssets'][number];
 const RISK_OPTS: { label: string; value: RiskTolerance; desc: string }[] = [
   { label: 'Conservative', value: 'conservative', desc: 'Stable yields, audited protocols' },
   { label: 'Moderate',     value: 'moderate',     desc: 'Balanced risk / reward' },
-  { label: 'Degen',        value: 'aggressive',   desc: 'Max yield, high risk' },
+  { label: 'Degen',        value: 'degen',        desc: 'Max yield, high risk' },
 ];
 
 const CAPITAL_OPTS: { label: string; value: number }[] = [
@@ -37,10 +37,10 @@ const CAPITAL_OPTS: { label: string; value: number }[] = [
 ];
 
 const ASSET_OPTS: { label: string; value: Asset }[] = [
-  { label: 'Stablecoin Yield', value: 'stablecoins' },
-  { label: 'RWA',              value: 'rwa'          },
-  { label: 'DeFi',             value: 'defi'         },
-  { label: 'Liquid Staking',   value: 'eth'          },
+  { label: 'Stablecoin Yield', value: 'stablecoin' },
+  { label: 'RWA',              value: 'rwa'        },
+  { label: 'DeFi',             value: 'defi'       },
+  { label: 'Liquid Staking',   value: 'staking'    },
 ];
 
 export default function AdvisorPage() {

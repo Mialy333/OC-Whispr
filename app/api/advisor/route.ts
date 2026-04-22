@@ -14,11 +14,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
+  const validRisks = ['conservative', 'moderate', 'degen'];
+  const validPrefs = ['stablecoin', 'rwa', 'defi', 'staking'];
+
   if (!profile.riskTolerance || !profile.capitalUsd || !profile.preferredAssets?.length || !profile.timeHorizon) {
     return NextResponse.json(
       { error: 'Missing required fields: riskTolerance, capitalUsd, preferredAssets, timeHorizon' },
       { status: 400 },
     );
+  }
+
+  if (
+    !validRisks.includes(profile.riskTolerance) ||
+    !profile.preferredAssets.every((a) => validPrefs.includes(a))
+  ) {
+    return NextResponse.json({ error: 'Invalid profile values' }, { status: 400 });
   }
 
   const advice = await getYieldAdvice(profile);

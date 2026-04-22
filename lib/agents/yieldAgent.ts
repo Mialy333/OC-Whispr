@@ -7,7 +7,9 @@ export async function getYieldAdvice(profile: UserProfile): Promise<YieldAdvice[
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
 
-  const systemPrompt = `You are an institutional yield advisor bridging TradFi and DeFi.
+  const systemPrompt = `You are a yield advisor bridging TradFi and DeFi.
+Risk profiles: conservative = capital preservation, low APY; moderate = balanced risk/reward; degen = maximum yield, leverage, high risk accepted.
+Asset categories: stablecoin = stablecoin lending/farming; rwa = real-world asset protocols; defi = DEX/lending/farming; staking = liquid staking (ETH, SOL, etc).
 You recommend concrete, actionable yield strategies tailored to the user's risk profile and capital size.
 Return ONLY a valid JSON array of exactly 3 objects. No markdown, no explanation, no code fences.
 Each object: {
@@ -26,7 +28,7 @@ Each object: {
 - Time horizon: ${profile.timeHorizon}
 ${profile.excludedProtocols?.length ? `- Excluded protocols: ${profile.excludedProtocols.join(', ')}` : ''}
 
-Recommend 3 yield strategies ranked by fit. Prioritize protocols with verifiable on-chain yield, audited contracts, and at least $100M TVL.`;
+Recommend 3 yield strategies ranked by fit for this exact risk profile. For degen: prioritize leveraged strategies, high APY, accept liquidation risk. For conservative: prioritize audited protocols, stable APY, no leverage. Prioritize protocols with verifiable on-chain yield and at least $100M TVL.`;
 
   const RETRYABLE = new Set([429, 502, 503, 504]);
   let lastError = '';

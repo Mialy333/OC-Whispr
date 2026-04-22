@@ -1,8 +1,8 @@
 export interface UserProfile {
   fid?: number;
-  riskTolerance: 'conservative' | 'moderate' | 'aggressive';
+  riskTolerance: 'conservative' | 'moderate' | 'degen';
   capitalUsd: number;
-  preferredAssets: ('stablecoins' | 'rwa' | 'defi' | 'eth' | 'btc')[];
+  preferredAssets: ('stablecoin' | 'rwa' | 'defi' | 'staking')[];
   timeHorizon: 'short' | 'medium' | 'long';
   excludedProtocols?: string[];
 }

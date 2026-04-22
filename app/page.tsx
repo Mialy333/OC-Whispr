@@ -103,7 +103,7 @@ function Onboarding({ onConnect }: { onConnect: () => void }) {
       <div style={{ padding: '22px 22px 0' }}>
         <h1 style={{
           fontFamily: SA.serif, fontSize: 34, fontWeight: 400, lineHeight: 0.98,
-          margin: 0, letterSpacing: -0.8, color: SA.ink, textAlign: 'center',
+          margin: 0, letterSpacing: -0.8, color: 'var(--text-primary)', textAlign: 'center',
         }}>
           Why every trader<br />
           <em>should stream</em> alpha.

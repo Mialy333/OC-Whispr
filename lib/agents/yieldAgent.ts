@@ -4,12 +4,12 @@ const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 
 // Diverse providers so one pool's rate limit doesn't knock out all fallbacks
 const MODELS = [
-  'meta-llama/llama-3.1-8b-instruct:free',
-  'mistralai/mistral-7b-instruct:free',
-  'qwen/qwen-2.5-7b-instruct:free',
   'google/gemini-2.0-flash-001',
   'google/gemini-flash-1.5-8b',
-  'deepseek/deepseek-r1-distill-llama-70b:free',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'mistralai/mistral-7b-instruct:free',
+  'deepseek/deepseek-chat-v3-5:free',
 ];
 
 const SYSTEM_PROMPT = `You are a yield advisor bridging TradFi and DeFi.
@@ -45,27 +45,29 @@ Recommend 3 yield strategies. Degen: max APY/leverage OK. Conservative: audited,
         }),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
 
       // OpenRouter sometimes returns HTTP 200 with {"error":{...}} instead of {"choices":[...]}
-      const orError = (data as Record<string, unknown>).error as Record<string, unknown> | undefined;
+      const orError = data.error as Record<string, unknown> | undefined;
       if (orError) {
         const code = Number(orError.code ?? res.status);
-        console.warn(`[yieldAgent] ${model} → OR error ${code}, trying next`);
-        errors.push(`${model}: OR-${code}`);
-        // Treat any rate-limit-class error as retriable
-        if (code !== 429 && code !== 503 && res.ok) break;
+        const msg  = String(orError.message ?? '').slice(0, 120);
+        console.warn(`[yieldAgent] ${model} → OR ${code}: ${msg}`);
+        errors.push(`${model}: OR-${code} ${msg}`);
+        // Always try next model; never break on provider-level errors
         continue;
       }
 
       if (!res.ok) {
-        errors.push(`${model}: ${res.status}`);
-        console.warn(`[yieldAgent] ${model} → ${res.status}, trying next`);
-        if (res.status !== 429 && res.status !== 503) break;
+        console.warn(`[yieldAgent] ${model} → HTTP ${res.status}`);
+        errors.push(`${model}: HTTP-${res.status}`);
+        // Only give up entirely on definitive auth failures
+        if (res.status === 401 || res.status === 403) break;
         continue;
       }
 
-      const raw: string = ((data as Record<string, unknown[]>).choices?.[0] as Record<string, Record<string, string>> | undefined)?.message?.content?.trim() ?? '';
+      const choices = data.choices as Array<{message?: {content?: string}}> | undefined;
+      const raw: string = choices?.[0]?.message?.content?.trim() ?? '';
       const advice = parseAdvice(raw);
       if (advice.length > 0) {
         console.log(`[yieldAgent] success with ${model}`);

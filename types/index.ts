@@ -1,3 +1,5 @@
+import type { YieldAdvice } from './advisor';
+
 export interface Protocol {
   id: string;
   name: string;
@@ -22,6 +24,7 @@ export interface AlphaSignal {
   source: 'defillama' | 'coingecko' | 'tokenterminal' | 'neynar';
   castTemplate?: string;
   boosted?: boolean;
+  yieldAdvice?: YieldAdvice;
 }
 
 export interface CuratedFeed {

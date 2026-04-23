@@ -9,6 +9,21 @@ import type { RewardsStatus } from '@/lib/rewards';
 const mono  = { fontFamily: SA.mono  } as const;
 const serif = { fontFamily: SA.serif } as const;
 
+interface AgentStatus {
+  lastPublished: string | null;
+  totalPublished: number;
+  nextPublish: string;
+  refreshing: boolean;
+}
+
+function hoursUntilNext8amUTC(): number {
+  const now  = new Date();
+  const next = new Date();
+  next.setUTCHours(8, 0, 0, 0);
+  if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
+  return Math.ceil((next.getTime() - now.getTime()) / 3_600_000);
+}
+
 const TIER_COLOR: Record<string, string> = {
   SCOUT:       SA.phosphorGlow,
   ANALYST:     SA.aqua,
@@ -24,11 +39,17 @@ export default function ProfileView({ fid }: Props) {
   const [wallet, setWallet]         = useState<string | null>(null);
   const [notifs, setNotifs]         = useState(false);
   const [signalsViewed, setSignalsViewed] = useState(0);
+  const [agentStatus, setAgentStatus]     = useState<AgentStatus | null>(null);
 
   useEffect(() => {
     fetch(`/api/rewards?fid=${fid}`)
       .then((r) => r.json())
       .then(setRewards)
+      .catch(() => {});
+
+    fetch('/api/agent/status')
+      .then((r) => r.json())
+      .then(setAgentStatus)
       .catch(() => {});
 
     sdk.context.then((ctx) => {
@@ -131,6 +152,36 @@ export default function ProfileView({ fid }: Props) {
         <StatBox label="Tier" value={rewards?.tier === 'NONE' || !rewards ? 'NEWCOMER' : rewards.tier} accent={tierColor} />
         <StatBox label="Cast Count" value={rewards?.castCount ?? 0} />
         <StatBox label="Member Since" value={memberSince} />
+      </div>
+
+      {/* Agent Activity */}
+      <div style={{
+        border: '1px solid var(--border)', borderRadius: 12,
+        padding: '0 14px', background: 'var(--bg-secondary)', marginBottom: 14,
+      }}>
+        <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', letterSpacing: 1.5, paddingTop: 12, paddingBottom: 6 }}>
+          AGENT ACTIVITY
+        </div>
+        <Row
+          label="Last published"
+          value={agentStatus?.lastPublished
+            ? new Date(agentStatus.lastPublished).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '—'}
+        />
+        <Row
+          label="Total published"
+          value={agentStatus ? String(agentStatus.totalPublished) : '—'}
+        />
+        <Row
+          label="Next publish"
+          value={`in ${hoursUntilNext8amUTC()}h`}
+        />
+        <Row
+          label="Status"
+          value="🟢 ACTIVE"
+          accent={SA.phosphorGlow}
+          last
+        />
       </div>
 
       {/* Rewards grid — DO NOT TOUCH */}

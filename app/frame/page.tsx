@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import sdk from '@farcaster/miniapp-sdk';
 import SignalCard from '@/components/SignalCard';
@@ -131,6 +132,10 @@ function AuthGate({ onLogin, loading, dark }: { onLogin: () => void; loading: bo
 
 // ── Main frame page ────────────────────────────────────────────────────────
 export default function FramePage() {
+  const searchParams = useSearchParams();
+  const castRef      = searchParams.get('ref');
+  const castSeverity = searchParams.get('severity') as AlphaSignal['severity'] | null;
+
   const { ready: privyReady, authenticated, login, user } = usePrivy();
   const [dark, toggleDark] = useDark();
   const [loginLoading, setLoginLoading] = useState(false);
@@ -140,6 +145,13 @@ export default function FramePage() {
   const [error, setError]               = useState('');
   const [view, setView]                 = useState<View>('feed');
   const [filter, setFilter]             = useState<FilterKey>('ALL');
+
+  // Route directly to Advisor when arriving from a high-severity cast
+  useEffect(() => {
+    if (castRef === 'cast' && castSeverity === 'high') {
+      setView('advisor');
+    }
+  }, [castRef, castSeverity]);
 
   const bg   = dark ? INK    : PAPER;
   const bg2  = dark ? '#1F1B15' : PAPER_D;
@@ -194,12 +206,18 @@ export default function FramePage() {
   // Filter logic (same as desktop FeedScreen)
   const allSignals = feed ? [...(feed.free ?? []), ...(feed.locked ?? [])] : [];
   const lockedIds  = new Set((feed?.locked ?? []).map((s) => s.id));
-  const filtered   = allSignals.filter((s) => {
+  const baseFiltered = allSignals.filter((s) => {
     if (filter === 'ALL')     return true;
     if (filter === 'HIGH')    return s.severity === 'high';
     if (filter === 'BOOSTED') return s.boosted;
     return true;
   });
+  // When arriving from a non-high cast, bubble matching severity to top
+  const filtered = (castRef === 'cast' && castSeverity && castSeverity !== 'high')
+    ? [...baseFiltered].sort((a, b) =>
+        (a.severity === castSeverity ? 0 : 1) - (b.severity === castSeverity ? 0 : 1)
+      )
+    : baseFiltered;
 
   // ── Privy initialising ──
   if (!privyReady) {
@@ -352,7 +370,25 @@ export default function FramePage() {
             </div>
           </div>
         ) : view === 'advisor' ? (
-          <AdvisorFlow fid={fid ?? undefined} onBack={() => setView('feed')} />
+          <>
+            {castRef === 'cast' && castSeverity === 'high' && (
+              <div style={{
+                margin: '10px 14px 0',
+                padding: '10px 12px',
+                border: `1px solid ${SA.phosphorGlow}`,
+                borderRadius: 10,
+                background: 'rgba(0,255,65,0.06)',
+              }}>
+                <div style={{ fontFamily: SA.mono, fontSize: 10, color: SA.phosphorGlow, fontWeight: 700, letterSpacing: 0.5, marginBottom: 3 }}>
+                  HIGH-SEVERITY SIGNAL DETECTED
+                </div>
+                <div style={{ fontFamily: SA.mono, fontSize: 10, color: ink, lineHeight: 1.5 }}>
+                  You came from an alpha signal. Get your personalized strategy →
+                </div>
+              </div>
+            )}
+            <AdvisorFlow fid={fid ?? undefined} onBack={() => setView('feed')} />
+          </>
         ) : fid ? (
           <ProfileView fid={fid} />
         ) : (

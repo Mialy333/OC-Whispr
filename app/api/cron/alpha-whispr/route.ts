@@ -32,8 +32,9 @@ export async function GET(req: NextRequest) {
     const signals = await analyzeProtocols(allProtocols);
 
     const castText = await generateAlphaWhispr(signals);
+    const topSeverity = signals[0]?.severity ?? 'medium';
 
-    const result = await publishCast(castText);
+    const result = await publishCast(castText, topSeverity);
     if (result.error) {
       return NextResponse.json(
         { success: false, error: result.error },

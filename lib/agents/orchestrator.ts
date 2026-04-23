@@ -8,6 +8,7 @@ import { getTopDeFiProjects } from '@/lib/api/tokenterminal';
 import type { TokenTerminalProject } from '@/lib/api/tokenterminal';
 // Coin360 removed — CoinGecko covers same data for free
 import { updateCache } from '@/lib/agents/signal-cache';
+import { getYieldAdvice } from '@/lib/agents/yieldAgent';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'AlphaWhispr';
@@ -276,6 +277,24 @@ ${hasRevenue ? JSON.stringify(revenueData, null, 2) : '[]'}`;
     (a, b) => severityScore(b) - severityScore(a)
   );
 
+  // Agent-to-agent: orchestrator calls yield agent for HIGH severity signals
+  const highSignals = sorted.filter((s) => s.severity === 'high');
+  if (highSignals.length > 0) {
+    try {
+      const yieldContext = await getYieldAdvice({
+        riskTolerance: 'moderate',
+        capitalUsd: 5000,
+        preferredAssets: ['defi', 'stablecoin'],
+        timeHorizon: 'medium',
+      });
+      if (yieldContext.length > 0) {
+        highSignals.forEach((s) => { s.yieldAdvice = yieldContext[0]; });
+      }
+    } catch (e) {
+      console.warn('[orchestrator] yield agent call failed:', e);
+    }
+  }
+
   const sources = ['defillama', 'coingecko', hasRevenue ? 'defillama-fees' : ''].filter(Boolean).join('+');
   updateCache(sorted, sources);
 
@@ -290,15 +309,15 @@ export async function generateAlphaWhispr(signals: AlphaSignal[]): Promise<strin
   const raw = await chat([
     {
       role: 'system',
-      content: `You write a daily TradFi/DeFi intelligence briefing for Alpha Whispr. Style: institutional, concise, data-driven. No emojis except the final one. Max 280 chars including suffix " 🔍 Alpha Whispr".`,
+      content: `You write a daily TradFi/DeFi intelligence briefing for Alpha Whispr. Style: institutional, concise, data-driven. No emojis except the final one. Max 210 chars. Do NOT add any closing line — it will be appended automatically.`,
     },
     {
       role: 'user',
       content: `Write today's morning briefing cast from these top signals:\n${top3}`,
     },
-  ], 120);
+  ], 160);
 
-  const suffix = ' 🔍 Alpha Whispr';
+  const suffix = '\nOpen the mini-app for your personalized strategy 👇 🔍 Alpha Whispr';
   const maxBody = 280 - suffix.length;
   const body = raw.replace(/\s*🔍.*$/u, '').trim().slice(0, maxBody);
   return `${body}${suffix}`;

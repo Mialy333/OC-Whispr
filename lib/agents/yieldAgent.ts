@@ -1,7 +1,7 @@
 import type { UserProfile, YieldAdvice } from '@/types/advisor';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
-const MODEL = 'anthropic/claude-sonnet-4-5';
+const MODEL = 'google/gemini-2.0-flash-001';
 
 export async function getYieldAdvice(profile: UserProfile): Promise<YieldAdvice[]> {
   const apiKey = process.env.OPENROUTER_API_KEY;

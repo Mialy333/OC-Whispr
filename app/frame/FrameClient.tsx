@@ -130,6 +130,32 @@ function AuthGate({ onLogin, loading, dark }: { onLogin: () => void; loading: bo
   );
 }
 
+// ── Skeleton card ─────────────────────────────────────────────────────────
+const SHIMMER_STYLE = `
+  @keyframes aw-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .aw-skeleton {
+    background: linear-gradient(90deg, var(--bg-secondary, #E8DFCC) 25%, var(--border, #9E9378) 50%, var(--bg-secondary, #E8DFCC) 75%);
+    background-size: 200% 100%;
+    animation: aw-shimmer 1.5s infinite;
+    border-radius: 3px;
+  }
+`;
+
+function SkeletonCard({ rule }: { rule: string }) {
+  return (
+    <div style={{ padding: '14px 14px 12px', borderBottom: `0.5px solid ${rule}` }}>
+      <style dangerouslySetInnerHTML={{ __html: SHIMMER_STYLE }} />
+      <div className="aw-skeleton" style={{ height: 8, width: '55%', marginBottom: 10 }} />
+      <div className="aw-skeleton" style={{ height: 17, width: '90%', marginBottom: 6 }} />
+      <div className="aw-skeleton" style={{ height: 17, width: '70%', marginBottom: 10 }} />
+      <div className="aw-skeleton" style={{ height: 10, width: '30%' }} />
+    </div>
+  );
+}
+
 // ── Main frame client ──────────────────────────────────────────────────────
 export default function FrameClient() {
   const searchParams = useSearchParams();
@@ -329,18 +355,10 @@ export default function FrameClient() {
 
       {/* 4. Scrollable content (flex: 1) */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: bg }}>
-        {feedLoading ? (
-          <div style={{
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            minHeight: '60vh', gap: 12,
-          }}>
-            <div style={{ fontFamily: SA.serif, fontSize: 20, fontStyle: 'italic', color: ink }}>
-              Alpha Whispr
-            </div>
-            <div style={{ fontFamily: SA.mono, fontSize: 10, color: ash, letterSpacing: 2 }}>
-              SCANNING PROTOCOLS…
-            </div>
+        {feedLoading && view === 'feed' ? (
+          <div style={{ paddingBottom: 8 }}>
+            <SkeletonCard rule={rule} />
+            <SkeletonCard rule={rule} />
           </div>
         ) : view === 'feed' ? (
           <div style={{ paddingBottom: 8 }}>

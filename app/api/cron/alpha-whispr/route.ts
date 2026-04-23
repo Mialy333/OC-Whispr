@@ -52,6 +52,13 @@ export async function GET(req: NextRequest) {
       ]);
     }
 
+    // Pre-warm feed cache so first users after publish get instant load
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
+    if (appUrl) {
+      fetch(`${appUrl}/api/feed`).catch(() => {});
+      console.log('[Cache] Feed pre-warmed after publish');
+    }
+
     console.log('[Advisor] Active profiles:', await getRedis().then(r => r.keys('advisor:*')).then(k => k.length).catch(() => 0));
 
     return NextResponse.json({

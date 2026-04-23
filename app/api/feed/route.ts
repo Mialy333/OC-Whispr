@@ -4,11 +4,15 @@ import { analyzeProtocols, curateForUser } from '@/lib/agents/orchestrator';
 import {
   getCachedSignals, isCacheStale, ensureRefreshLoop,
 } from '@/lib/agents/signal-cache';
-import { checkIfFollows } from '@/lib/api/neynar';
 import { apiGuard } from '@/lib/middleware';
 import type { AlphaSignal } from '@/types';
 
 export const dynamic = 'force-dynamic';
+
+const CDN_CACHE = {
+  'Cache-Control': 's-maxage=60, stale-while-revalidate=300',
+  'CDN-Cache-Control': 'max-age=60',
+};
 
 function parseFid(raw: string | null): number | null {
   if (!raw) return null;
@@ -16,8 +20,6 @@ function parseFid(raw: string | null): number | null {
   if (!Number.isInteger(n) || n <= 0 || n >= 1_000_000_000) return null;
   return n;
 }
-
-const NO_STORE = { 'Cache-Control': 'no-store' };
 
 export async function GET(req: NextRequest) {
   const blocked = apiGuard(req);
@@ -29,7 +31,7 @@ export async function GET(req: NextRequest) {
     const fid = parseFid(req.nextUrl.searchParams.get('fid'));
 
     if (req.nextUrl.searchParams.has('fid') && fid === null) {
-      return NextResponse.json({ error: 'Invalid fid' }, { status: 400, headers: NO_STORE });
+      return NextResponse.json({ error: 'Invalid fid' }, { status: 400 });
     }
 
     let rawSignals: AlphaSignal[];
@@ -44,20 +46,15 @@ export async function GET(req: NextRequest) {
       ? await curateForUser(fid, rawSignals)
       : rawSignals;
 
-    // Check follow status — followers get all signals unlocked
-    const botFid = process.env.BOT_FID ? Number(process.env.BOT_FID) : 0;
-    const followsBot = fid && botFid ? await checkIfFollows(fid, botFid) : false;
-
     const free   = signals.slice(0, 2);
-    const locked = followsBot ? [] : signals.slice(2);
-    const bonus  = followsBot ? signals.slice(2) : [];
+    const locked = signals.slice(2);
 
     return NextResponse.json(
-      { free: [...free, ...bonus], locked, total: signals.length, followsBot },
-      { headers: NO_STORE }
+      { free, locked, total: signals.length },
+      { headers: CDN_CACHE }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500, headers: NO_STORE });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

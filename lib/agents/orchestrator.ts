@@ -169,7 +169,14 @@ function staticSignals(): AlphaSignal[] {
   ];
 }
 
+let _cachedSignals: AlphaSignal[] = [];
+let _cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000;
+
 export async function analyzeProtocols(protocols: Protocol[]): Promise<AlphaSignal[]> {
+  if (_cachedSignals.length > 0 && Date.now() - _cacheTimestamp < CACHE_TTL) {
+    return _cachedSignals;
+  }
   if (protocols.length === 0) return [];
 
   const [stablecoins, rwaTokens, ttProjects, rwaProtocols, llamaStablecoins] = await Promise.allSettled([
@@ -294,6 +301,9 @@ ${hasRevenue ? JSON.stringify(revenueData, null, 2) : '[]'}`;
       console.warn('[orchestrator] yield agent call failed:', e);
     }
   }
+
+  _cachedSignals = sorted;
+  _cacheTimestamp = Date.now();
 
   const sources = ['defillama', 'coingecko', hasRevenue ? 'defillama-fees' : ''].filter(Boolean).join('+');
   updateCache(sorted, sources);

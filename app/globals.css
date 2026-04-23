@@ -25,8 +25,8 @@
 
   /* Semantic aliases — light mode */
   --bg-primary:      #F2ECDF;
-  --bg-secondary:    #F2ECDF;
-  --bg-tertiary:     #F2ECDF;
+  --bg-secondary:    #E8DFCC;
+  --bg-tertiary:     #DDD4BE;
   --bg-terminal:     var(--sa-terminal);
   --text-primary:    var(--sa-ink);
   --text-secondary:  var(--sa-graphite);
@@ -57,6 +57,8 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { background-color: #F2ECDF; }
 
 body {
   background-color: var(--bg-primary);

@@ -6,6 +6,7 @@ import sdk from '@farcaster/miniapp-sdk';
 import SignalCard from '@/components/SignalCard';
 import AdvisorFlow from '@/components/AdvisorFlow';
 import ProfileView from '@/components/ProfileView';
+import TerminalAnimation from '@/components/TerminalAnimation';
 import { SA, StatusBar, Ticker } from '@/components/ui';
 import type { AlphaSignal } from '@/types';
 
@@ -252,7 +253,15 @@ export default function FramePage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontFamily: SA.mono, fontSize: 9, color: SA.phosphorGlow, letterSpacing: 0.5 }}>● LIVE</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{
+                display: 'inline-block', width: 10, height: 10, borderRadius: 5,
+                background: '#00FF41',
+                boxShadow: '0 0 6px #00FF41, 0 0 12px rgba(0,255,65,0.4)',
+                flexShrink: 0,
+              }} />
+              <span style={{ fontFamily: SA.mono, fontSize: 9, color: SA.phosphorGlow, letterSpacing: 0.8 }}>LIVE</span>
+            </span>
           <button
             onClick={toggleDark}
             title="Toggle theme"
@@ -269,7 +278,10 @@ export default function FramePage() {
         </div>
       </div>
 
-      {/* 3. Filter tabs ALL / HIGH / BOOSTED (32px) — only on feed view */}
+      {/* 3a. Terminal animation — only on feed view, above filter tabs */}
+      {view === 'feed' && <TerminalAnimation fid={fid} />}
+
+      {/* 3b. Filter tabs ALL / HIGH / BOOSTED (32px) — only on feed view */}
       {view === 'feed' && (
         <div style={{
           flexShrink: 0,

@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const follows = await checkIfFollows(fid, botFid);
     if (!follows) {
       return NextResponse.json(
-        { unlocked: false, reason: 'follow_required', followUrl: 'https://warpcast.com/morningwhispr' },
+        { unlocked: false, reason: 'follow_required', followUrl: 'https://warpcast.com/alphawhispr' },
         { headers: NO_STORE }
       );
     }

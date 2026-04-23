@@ -13,7 +13,7 @@ interface Props {
   onOpen?: (s: AlphaSignal) => void;
 }
 
-const FOLLOW_URL = 'https://warpcast.com/morningwhispr';
+const FOLLOW_URL = 'https://warpcast.com/alphawhispr';
 
 export default function SignalCard({ signal, locked, fid: _fid, dark = false, onOpen }: Props) {
   const [followed, setFollowed] = useState(false);
@@ -115,7 +115,7 @@ export default function SignalCard({ signal, locked, fid: _fid, dark = false, on
           marginTop: 8,
           fontFamily: SA.mono, fontSize: 9, color: muted, letterSpacing: 0.5,
         }}>
-          Follow @morningwhispr on Farcaster to unlock
+          Follow @alphawhispr on Farcaster to unlock
         </div>
       )}
 

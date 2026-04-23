@@ -37,7 +37,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         appId={PRIVY_APP_ID}
         config={{
           loginMethods: ['farcaster', 'wallet'],
-          appearance: { theme: 'dark' },
+          appearance: {
+            theme: 'light',
+            accentColor: '#3E6FA8',
+            logo: 'https://farhack2026.vercel.app/icon.png',
+          },
         }}
       >
         {children}

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import sdk from '@farcaster/miniapp-sdk';
 import type { AlphaSignal } from '@/types';
 import { SA, Sparkline, SeverityChip, seededChart } from '@/components/ui';
@@ -13,15 +12,23 @@ interface Props {
   onOpen?: (s: AlphaSignal) => void;
 }
 
-const FOLLOW_URL = 'https://warpcast.com/alphawhispr';
+const waitlistUrl = process.env.NEXT_PUBLIC_WAITLIST_URL;
+
+function handleWaitlist(e: React.MouseEvent) {
+  e.stopPropagation();
+  if (waitlistUrl) {
+    sdk.actions.openUrl(waitlistUrl).catch(() =>
+      window.open(waitlistUrl, '_blank', 'noopener,noreferrer')
+    );
+  } else {
+    console.log('waitlist coming soon');
+  }
+}
 
 export default function SignalCard({ signal, locked, fid: _fid, dark = false, onOpen }: Props) {
-  const [followed, setFollowed] = useState(false);
-
-  const ink  = dark ? SA.paperDeep : SA.ink;
+  const ink   = dark ? SA.paperDeep : SA.ink;
   const muted = SA.ash;
   const ruleC = dark ? '#332E22' : SA.rule;
-  const isLocked = locked && !followed;
 
   const ts = new Date(signal.timestamp).toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit', hour12: false,
@@ -29,30 +36,15 @@ export default function SignalCard({ signal, locked, fid: _fid, dark = false, on
 
   const chart = seededChart(signal.id);
 
-  const handleFollow = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const ctx = await sdk.context;
-      if (ctx !== null) {
-        await sdk.actions.openUrl(FOLLOW_URL);
-      } else {
-        window.open(FOLLOW_URL, '_blank', 'noopener,noreferrer');
-      }
-    } catch {
-      window.open(FOLLOW_URL, '_blank', 'noopener,noreferrer');
-    }
-    setFollowed(true);
-  };
-
   return (
     <div style={{
       padding: 'clamp(12px, 4vw, 20px) clamp(14px, 4.5vw, 20px) clamp(10px, 3.5vw, 16px)',
       borderBottom: `0.5px solid ${ruleC}`,
       position: 'relative', cursor: 'pointer',
-      background: signal.boosted && !isLocked
+      background: signal.boosted && !locked
         ? (dark ? 'rgba(42,168,75,0.05)' : 'rgba(42,168,75,0.04)')
         : 'transparent',
-    }} onClick={() => !isLocked && onOpen?.(signal)}>
+    }} onClick={() => !locked && onOpen?.(signal)}>
 
       {/* Meta line */}
       <div style={{
@@ -77,50 +69,72 @@ export default function SignalCard({ signal, locked, fid: _fid, dark = false, on
         <h3 style={{
           flex: 1, fontFamily: SA.serif, fontSize: 'clamp(14px, 4vw, 18px)', fontWeight: 500,
           lineHeight: 1.12, margin: 0, letterSpacing: -0.4, color: ink,
-          filter: isLocked ? 'blur(4.5px)' : 'none',
+          filter: locked ? 'blur(4.5px)' : 'none',
           transition: 'filter .4s',
-          userSelect: isLocked ? 'none' : 'auto',
+          userSelect: locked ? 'none' : 'auto',
         }}>
-          {isLocked ? 'Lorem ipsum dolor sit amet consectetur adipiscing elit.' : signal.title}
+          {locked ? 'Lorem ipsum dolor sit amet consectetur adipiscing elit.' : signal.title}
         </h3>
         <SeverityChip level={signal.severity} />
       </div>
 
-      {/* Data chip + sparkline + follow CTA */}
+      {/* Data chip + sparkline */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
         <span style={{
           fontFamily: SA.mono, fontSize: 10, letterSpacing: 0.5,
           background: dark ? '#0C1A0C' : SA.terminal,
           color: SA.terminalGreen,
           padding: '2px 7px',
-          filter: isLocked ? 'blur(4px)' : 'none',
+          filter: locked ? 'blur(4px)' : 'none',
           transition: 'filter .4s',
         }}>
-          {isLocked ? '██████ ██.█%' : signal.dataPoint}
+          {locked ? '██████ ██.█%' : signal.dataPoint}
         </span>
         <Sparkline data={chart} w={64} h={18} color={SA.phosphorGlow} />
-        {isLocked && (
-          <button onClick={handleFollow} style={{
-            marginLeft: 'auto',
-            border: '1px solid var(--accent-phosphore)', background: 'transparent',
-            color: 'var(--accent-phosphore)', fontFamily: SA.mono, fontSize: 11, fontWeight: 700,
-            letterSpacing: 0.4, padding: '3px 10px', borderRadius: 0, cursor: 'pointer',
-          }}>FOLLOW TO UNLOCK</button>
-        )}
       </div>
 
-      {/* Follow prompt under data row when locked */}
-      {isLocked && (
+      {/* Premium locked state */}
+      {locked && (
         <div style={{
-          marginTop: 8,
-          fontFamily: SA.mono, fontSize: 9, color: muted, letterSpacing: 0.5,
+          marginTop: 12,
+          padding: '10px 12px',
+          border: `1px solid ${dark ? '#332E22' : SA.rule}`,
+          borderRadius: 8,
+          background: dark ? 'rgba(26,24,20,0.6)' : 'rgba(242,236,223,0.8)',
+          display: 'flex', flexDirection: 'column', gap: 6,
         }}>
-          Follow @alphawhispr on Farcaster to unlock
+          <div style={{
+            fontFamily: SA.mono, fontSize: 10, fontWeight: 700,
+            color: muted, letterSpacing: 1, textTransform: 'uppercase',
+          }}>
+            🔒 PREMIUM
+          </div>
+          <div style={{
+            fontFamily: SA.mono, fontSize: 9.5, color: muted,
+            letterSpacing: 0.3, lineHeight: 1.45,
+          }}>
+            Full analysis available for Premium members
+          </div>
+          <button
+            onClick={handleWaitlist}
+            style={{
+              alignSelf: 'flex-start',
+              border: '1px solid var(--accent-phosphore)',
+              background: 'transparent',
+              color: 'var(--accent-phosphore)',
+              fontFamily: SA.mono, fontSize: 11, fontWeight: 700,
+              letterSpacing: 0.4, padding: '4px 12px',
+              borderRadius: 0, cursor: 'pointer',
+              textTransform: 'uppercase',
+            }}
+          >
+            JOIN WAITLIST
+          </button>
         </div>
       )}
 
       {/* Summary — only when unlocked */}
-      {!isLocked && (
+      {!locked && (
         <p style={{
           margin: '8px 0 0',
           fontFamily: SA.serif, fontSize: 12, lineHeight: 1.4,
@@ -128,15 +142,6 @@ export default function SignalCard({ signal, locked, fid: _fid, dark = false, on
         }}>
           {signal.summary}
         </p>
-      )}
-
-      {/* Unlock flash overlay */}
-      {followed && locked && (
-        <div style={{
-          pointerEvents: 'none', position: 'absolute', inset: 0,
-          backgroundColor: 'rgba(42,168,75,0.06)',
-          animation: 'sa-unlock-flash 1s ease-out forwards',
-        }} />
       )}
     </div>
   );

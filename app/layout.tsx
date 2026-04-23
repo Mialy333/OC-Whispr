@@ -46,10 +46,20 @@ export const metadata: Metadata = {
     description: 'AI agent monitoring DeFi, RWA & Stablecoin protocols 24/7',
   },
   other: {
-    'fc:frame': 'vNext',
-    'fc:frame:image': `${appUrl}/frame/opengraph-image`,
-    'fc:frame:button:1': 'Open Alpha Whispr',
-    'fc:frame:post_url': `${appUrl}/api/frame`,
+    'fc:frame': JSON.stringify({
+      version: 'next',
+      imageUrl: `${appUrl}/og-image.png`,
+      button: {
+        title: 'Open Alpha Whispr',
+        action: {
+          type: 'launch_frame',
+          name: 'Alpha Whispr',
+          url: `${appUrl}/frame`,
+          splashImageUrl: `${appUrl}/splash.png`,
+          splashBackgroundColor: '#F2ECDF',
+        },
+      },
+    }),
   },
 };
 

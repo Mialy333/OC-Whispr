@@ -36,15 +36,21 @@ function AuthGate({ onLogin, loading }: { onLogin: () => void; loading: boolean 
       padding: '32px 24px', gap: 0,
     }}>
       {/* Masthead */}
+      <img
+        src="/icon.png"
+        alt="Alpha Whispr"
+        width={72} height={72}
+        style={{ borderRadius: 20, marginBottom: 14, objectFit: 'cover' }}
+      />
       <div style={{
         fontFamily: SA.serif, fontSize: 32, fontWeight: 400,
-        letterSpacing: -1, color: INK, marginBottom: 8, lineHeight: 1,
+        letterSpacing: -1, color: INK, marginBottom: 6, lineHeight: 1,
       }}>
         Alpha Whispr
       </div>
       <div style={{
         fontFamily: SA.mono, fontSize: 9, color: SA.ash,
-        letterSpacing: 3, textTransform: 'uppercase', marginBottom: 40,
+        letterSpacing: 3, textTransform: 'uppercase', marginBottom: 36,
       }}>
         Heard before spoken
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SA, PButton } from '@/components/ui';
 import type { UserProfile, AdvisorResponse, YieldAdvice } from '@/types/advisor';
 
@@ -37,14 +37,37 @@ const RISK_COLOR: Record<YieldAdvice['riskLevel'], string> = {
 
 interface Props { fid?: number; onBack: () => void; }
 
+const LOADING_STEPS = [
+  'Connecting to protocols…',
+  'Scanning DeFiLlama TVL data…',
+  'Analyzing your risk profile…',
+  'Evaluating yield opportunities…',
+  'Stress-testing strategies…',
+  'Generating alpha…',
+];
+
 export default function AdvisorFlow({ fid, onBack }: Props) {
   const [step, setStep]       = useState<1 | 2 | 3>(1);
   const [risk, setRisk]       = useState<RiskTolerance | null>(null);
   const [capital, setCapital] = useState<number | null>(null);
   const [assets, setAssets]   = useState<Asset[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadStep, setLoadStep] = useState(0);
   const [error, setError]     = useState<string | null>(null);
   const [result, setResult]   = useState<AdvisorResponse | null>(null);
+  const loadTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (loading) {
+      setLoadStep(0);
+      loadTimer.current = setInterval(() => {
+        setLoadStep((p) => Math.min(p + 1, LOADING_STEPS.length - 1));
+      }, 1800);
+    } else {
+      if (loadTimer.current) clearInterval(loadTimer.current);
+    }
+    return () => { if (loadTimer.current) clearInterval(loadTimer.current); };
+  }, [loading]);
 
   const toggleAsset = (a: Asset) =>
     setAssets((p) => p.includes(a) ? p.filter((x) => x !== a) : [...p, a]);
@@ -242,10 +265,35 @@ export default function AdvisorFlow({ fid, onBack }: Props) {
           {error && (
             <p style={{ ...mono, fontSize: 10, color: SA.rust, marginTop: 10 }}>⚠ {error}</p>
           )}
-          <PButton primary onClick={handleSubmit} disabled={assets.length === 0 || loading}
-            style={{ width: '100%', padding: '11px', marginTop: 20, borderRadius: 12, fontSize: 12 }}>
-            {loading ? 'Analyzing…' : 'Get my alpha →'}
-          </PButton>
+          {loading && (
+            <div style={{
+              marginTop: 20,
+              border: `1px solid rgba(0,255,65,0.2)`,
+              borderRadius: 10,
+              padding: '14px',
+              background: SA.terminal,
+            }}>
+              <div style={{ ...mono, fontSize: 9, color: SA.terminalGreen, letterSpacing: 1, marginBottom: 8, opacity: 0.5 }}>
+                ALPHA WHISPR AGENT
+              </div>
+              {LOADING_STEPS.slice(0, loadStep + 1).map((msg, i) => (
+                <div key={i} style={{
+                  ...mono, fontSize: 10,
+                  color: SA.terminalGreen,
+                  opacity: i < loadStep ? 0.4 : 1,
+                  lineHeight: 1.8,
+                }}>
+                  {i < loadStep ? `✓ ${msg}` : `› ${msg}`}
+                </div>
+              ))}
+            </div>
+          )}
+          {!loading && (
+            <PButton primary onClick={handleSubmit} disabled={assets.length === 0}
+              style={{ width: '100%', padding: '11px', marginTop: 20, borderRadius: 12, fontSize: 12 }}>
+              Get my alpha →
+            </PButton>
+          )}
         </>
       )}
     </div>

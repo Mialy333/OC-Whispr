@@ -5,13 +5,22 @@
     "signature": "EB7KCiq63LSpsZEGhZP4y/DT/hxzC92ovAL5zhthqWAcZnc/yVUgLRMI4llzkuEieCNng6Eas91LmAWnBkpZ+hw="
   },
   "frame": {
-    "version": "1",
     "name": "Alpha Whispr",
+    "version": "1",
     "iconUrl": "https://farhack2026.vercel.app/icon.png",
-    "homeUrl": "https://farhack2026.vercel.app/frame",
-    "imageUrl": "https://farhack2026.vercel.app/frame/opengraph-image",
+    "homeUrl": "https://farhack2026.vercel.app",
+    "imageUrl": "https://farhack2026.vercel.app/og-image.png",
     "buttonTitle": "Open Alpha Whispr",
-    "splashImageUrl": "https://farhack2026.vercel.app/icon.png",
-    "splashBackgroundColor": "#09090b"
+    "splashImageUrl": "https://farhack2026.vercel.app/splash.png",
+    "splashBackgroundColor": "#09090b",
+    "webhookUrl": "https://farhack2026.vercel.app/api/webhook",
+    "subtitle": "TradFi and DeFi Intelligence",
+    "description": "Autonomous AI agent monitoring DeFi, RWA and Stablecoins 24/7. Personalized signals and yield strategies on Farcaster.",
+    "primaryCategory": "finance",
+    "tagline": "Heard before spoken",
+    "tags": ["rwa", "defi", "stablecoin", "yield", "ai"],
+    "ogTitle": "Alpha Whispr - AI signals",
+    "ogDescription": "Autonomous AI agent monitoring DeFi, RWA and Stablecoin protocols continuously.",
+    "ogImageUrl": "https://farhack2026.vercel.app/og-image.png"
   }
 }

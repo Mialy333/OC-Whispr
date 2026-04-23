@@ -31,7 +31,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid profile values' }, { status: 400 });
   }
 
-  const advice = await getYieldAdvice(profile);
+  let advice;
+  try {
+    advice = await getYieldAdvice(profile);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[advisor] getYieldAdvice failed:', msg);
+    return NextResponse.json(
+      { error: 'Advisor unavailable — check OPENROUTER_API_KEY', detail: msg },
+      { status: 503 },
+    );
+  }
+
+  if (!advice?.length) {
+    return NextResponse.json(
+      { error: 'No advice generated — LLM returned empty response' },
+      { status: 502 },
+    );
+  }
 
   const fid = profile.fid ? String(profile.fid) : 'anon';
   const response: AdvisorResponse = {
@@ -46,7 +63,7 @@ export async function POST(req: NextRequest) {
     await redis.set(
       `advisor:${fid}:${Date.now()}`,
       JSON.stringify(response),
-      { EX: 60 * 60 * 24 * 7 }, // 7 days TTL
+      { EX: 60 * 60 * 24 * 7 },
     );
   } catch (e) {
     console.warn('[advisor] KV write failed:', e);

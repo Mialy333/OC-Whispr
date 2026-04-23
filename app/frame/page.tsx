@@ -20,7 +20,7 @@ export async function generateMetadata({
     other: {
       'fc:frame': JSON.stringify({
         version: 'next',
-        imageUrl: `${appUrl}/og-image.png`,
+        imageUrl: `${appUrl}/icon.png`,
         button: {
           title: 'Open Alpha Whispr',
           action: {

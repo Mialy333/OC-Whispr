@@ -15,7 +15,7 @@
     "splashBackgroundColor": "#09090b",
     "webhookUrl": "https://farhack2026.vercel.app/api/webhook",
     "subtitle": "TradFi and DeFi Intelligence",
-    "description": "Autonomous AI agent monitoring DeFi, RWA and Stablecoins 24/7. Personalized signals and yield strategies on Farcaster.",
+    "description": "Autonomous AI agent monitoring DeFi, RWA and Stablecoins continuously. Personalized signals and yield strategies on Farcaster.",
     "primaryCategory": "finance",
     "tagline": "Heard before spoken",
     "tags": ["rwa", "defi", "stablecoin", "yield", "ai"],

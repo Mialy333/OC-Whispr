@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: '/frame',
+        headers: [
+          { key: 'X-Frame-Options', value: 'ALLOWALL' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors *;" },
+        ],
+      },
+      {
         source: '/.well-known/farcaster.json',
         headers: [
           { key: 'Content-Type', value: 'application/json' },

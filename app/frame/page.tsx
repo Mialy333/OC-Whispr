@@ -22,74 +22,55 @@ interface FeedResponse {
   total: number;
 }
 
+const PAPER = '#F2ECDF';
+const INK   = '#1A1814';
+
 export default function FramePage() {
-  const [fid, setFid]     = useState<number | null>(null);
-  const [feed, setFeed]   = useState<FeedResponse | null>(null);
+  const [fid, setFid]         = useState<number | null>(null);
+  const [feed, setFeed]       = useState<FeedResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [view, setView]   = useState<View>('feed');
+  const [error, setError]     = useState('');
+  const [view, setView]       = useState<View>('feed');
 
   useEffect(() => {
     let cancelled = false;
 
-    async function init() {
+    const init = async () => {
       try {
+        // Show content immediately, then signal ready
+        setLoading(false);
+        await sdk.actions.ready();
+
+        // Fetch context and feed in background after frame is visible
         const ctx = await sdk.context;
         const userFid = ctx?.user?.fid ?? null;
-        if (!cancelled) setFid(userFid);
-
-        if (!userFid) {
-          if (!cancelled) setLoading(false);
-          return;
-        }
-
-        const res = await fetch(`/api/feed?fid=${userFid}`);
-        const data = await res.json();
         if (cancelled) return;
-        if (data.error) throw new Error(data.error);
-        setFeed(data);
 
-        await sdk.actions.ready();
-        await sdk.actions.addFrame().catch(() => {});
+        if (userFid) {
+          setFid(userFid);
+          await sdk.actions.addFrame().catch(() => {});
+          const res  = await fetch(`/api/feed?fid=${userFid}`);
+          const data = await res.json();
+          if (cancelled) return;
+          if (data.error) throw new Error(data.error);
+          setFeed(data);
+        } else {
+          // Not in frame context — still show placeholder feed
+          const res  = await fetch(`/api/feed?fid=0`);
+          const data = await res.json().catch(() => null);
+          if (!cancelled && data && !data.error) setFeed(data);
+        }
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load feed');
-        await sdk.actions.ready().catch(() => {});
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setError(e instanceof Error ? e.message : 'Failed to load feed');
+        }
       }
-    }
+    };
 
     init();
     return () => { cancelled = true; };
   }, []);
-
-  if (!loading && fid === null) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950 px-4">
-        <p className="text-2xl">🔍</p>
-        <p className="text-sm font-semibold text-zinc-100">Alpha Whispr</p>
-        <p className="text-center text-xs text-zinc-500">
-          Open this link inside Farcaster to access your personalized alpha feed.
-        </p>
-        <a
-          href="https://warpcast.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 rounded-lg bg-violet-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-violet-500 transition-colors"
-        >
-          Open in Farcaster
-        </a>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-zinc-600 border-t-violet-400" />
-      </div>
-    );
-  }
 
   return (
     <div style={{
@@ -100,13 +81,26 @@ export default function FramePage() {
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
-      backgroundColor: 'var(--bg-primary)',
-      color: 'var(--text-primary)',
+      background: PAPER,
+      color: INK,
       fontFamily: SA.mono,
     }}>
-      {/* Scrollable content area */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {view === 'feed' && (
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', background: PAPER }}>
+        {loading ? (
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            minHeight: '60vh', gap: 12,
+          }}>
+            <div style={{ fontFamily: SA.serif, fontSize: 20, fontStyle: 'italic', color: INK }}>
+              Alpha Whispr
+            </div>
+            <div style={{ fontFamily: SA.mono, fontSize: 10, color: SA.ash, letterSpacing: 2 }}>
+              LOADING…
+            </div>
+          </div>
+        ) : view === 'feed' ? (
           <div className="feed-container">
             {error && (
               <div style={{ padding: '10px 14px' }}>
@@ -114,7 +108,7 @@ export default function FramePage() {
               </div>
             )}
             {feed?.free.map((signal) => (
-              <SignalCard key={signal.id} signal={signal} locked={false} fid={fid!} />
+              <SignalCard key={signal.id} signal={signal} locked={false} fid={fid ?? 0} />
             ))}
             {(feed?.locked.length ?? 0) > 0 && (
               <p style={{
@@ -125,7 +119,7 @@ export default function FramePage() {
               </p>
             )}
             {feed?.locked.map((signal) => (
-              <SignalCard key={signal.id} signal={signal} locked={true} fid={fid!} />
+              <SignalCard key={signal.id} signal={signal} locked={true} fid={fid ?? 0} />
             ))}
             {!error && !feed && (
               <div style={{ padding: '32px 14px', textAlign: 'center' }}>
@@ -135,14 +129,16 @@ export default function FramePage() {
               </div>
             )}
           </div>
-        )}
-
-        {view === 'advisor' && (
+        ) : view === 'advisor' ? (
           <AdvisorFlow fid={fid ?? undefined} onBack={() => setView('feed')} />
-        )}
-
-        {view === 'profile' && fid && (
+        ) : fid ? (
           <ProfileView fid={fid} />
+        ) : (
+          <div style={{ padding: '32px 14px', textAlign: 'center' }}>
+            <span style={{ fontFamily: SA.mono, fontSize: 10, color: SA.ash, letterSpacing: 2 }}>
+              OPEN IN FARCASTER
+            </span>
+          </div>
         )}
       </div>
 
@@ -152,8 +148,8 @@ export default function FramePage() {
         height: '48px',
         display: 'flex',
         alignItems: 'stretch',
-        backgroundColor: 'var(--bg-primary)',
-        borderTop: '1px solid var(--border)',
+        background: PAPER,
+        borderTop: `1px solid ${SA.rule}`,
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {TABS.map((tab) => (
@@ -170,13 +166,13 @@ export default function FramePage() {
               background: 'transparent',
               border: 'none',
               borderTop: view === tab.id
-                ? '2px solid var(--accent-phosphore)'
+                ? `2px solid ${SA.phosphorGlow}`
                 : '2px solid transparent',
               cursor: 'pointer',
               fontFamily: SA.mono,
               fontSize: 9,
               letterSpacing: 0.5,
-              color: view === tab.id ? 'var(--accent-phosphore)' : 'var(--text-muted)',
+              color: view === tab.id ? SA.phosphorGlow : SA.ash,
               transition: 'color .15s',
               paddingTop: 2,
             }}

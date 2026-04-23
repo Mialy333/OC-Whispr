@@ -1,8 +1,8 @@
 'use client';
 
-import sdk from '@farcaster/miniapp-sdk';
 import type { AlphaSignal } from '@/types';
 import { SA, Sparkline, SeverityChip, seededChart } from '@/components/ui';
+import WaitlistButton from '@/components/WaitlistButton';
 
 interface Props {
   signal: AlphaSignal;
@@ -10,19 +10,6 @@ interface Props {
   fid: number;
   dark?: boolean;
   onOpen?: (s: AlphaSignal) => void;
-}
-
-const waitlistUrl = process.env.NEXT_PUBLIC_WAITLIST_URL;
-
-function handleWaitlist(e: React.MouseEvent) {
-  e.stopPropagation();
-  if (waitlistUrl) {
-    sdk.actions.openUrl(waitlistUrl).catch(() =>
-      window.open(waitlistUrl, '_blank', 'noopener,noreferrer')
-    );
-  } else {
-    console.log('waitlist coming soon');
-  }
 }
 
 export default function SignalCard({ signal, locked, fid: _fid, dark = false, onOpen }: Props) {
@@ -115,21 +102,7 @@ export default function SignalCard({ signal, locked, fid: _fid, dark = false, on
           }}>
             Full analysis available for Premium members
           </div>
-          <button
-            onClick={handleWaitlist}
-            style={{
-              alignSelf: 'flex-start',
-              border: '1px solid var(--accent-phosphore)',
-              background: 'transparent',
-              color: 'var(--accent-phosphore)',
-              fontFamily: SA.mono, fontSize: 11, fontWeight: 700,
-              letterSpacing: 0.4, padding: '4px 12px',
-              borderRadius: 0, cursor: 'pointer',
-              textTransform: 'uppercase',
-            }}
-          >
-            JOIN WAITLIST
-          </button>
+          <WaitlistButton />
         </div>
       )}
 

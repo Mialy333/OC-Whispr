@@ -6,10 +6,21 @@ import sdk from '@farcaster/miniapp-sdk';
 import SignalCard from '@/components/SignalCard';
 import AdvisorFlow from '@/components/AdvisorFlow';
 import ProfileView from '@/components/ProfileView';
-import { SA } from '@/components/ui';
+import { SA, StatusBar, Ticker } from '@/components/ui';
 import type { AlphaSignal } from '@/types';
 
-type View = 'feed' | 'advisor' | 'profile';
+// ── Types ──────────────────────────────────────────────────────────────────
+type View      = 'feed' | 'advisor' | 'profile';
+type FilterKey = 'ALL' | 'HIGH' | 'BOOSTED';
+
+interface FeedResponse { free: AlphaSignal[]; locked: AlphaSignal[]; total: number; }
+
+// ── Tokens (hardcoded — CSS vars unreliable in Warpcast webview) ───────────
+const PAPER   = '#F2ECDF';
+const PAPER_D = '#E8DFCC';
+const INK     = '#1A1814';
+const ASH     = '#7A7364';
+const RULE    = '#9E9378';
 
 const TABS: { id: View; icon: string; label: string }[] = [
   { id: 'feed',    icon: '▤', label: 'Feed'    },
@@ -17,49 +28,65 @@ const TABS: { id: View; icon: string; label: string }[] = [
   { id: 'profile', icon: '◉', label: 'Profile' },
 ];
 
-interface FeedResponse {
-  free: AlphaSignal[];
-  locked: AlphaSignal[];
-  total: number;
+const TICKER_ITEMS = [
+  'LIVE SIGNALS · AI-CURATED · UPDATED CONTINUOUSLY',
+  'CAST A SIGNAL → UNLOCK THE NEXT',
+  'DEFILLAMA · COINGECKO · TOKEN TERMINAL',
+];
+
+// ── useDark (same as desktop) ──────────────────────────────────────────────
+function useDark() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    setDark(document.documentElement.getAttribute('data-theme') === 'dark');
+  }, []);
+  const toggle = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
+    try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* */ }
+  };
+  return [dark, toggle] as const;
 }
 
-const PAPER = '#F2ECDF';
-const INK   = '#1A1814';
-
 // ── Auth gate ──────────────────────────────────────────────────────────────
-function AuthGate({ onLogin, loading }: { onLogin: () => void; loading: boolean }) {
+function AuthGate({ onLogin, loading, dark }: { onLogin: () => void; loading: boolean; dark: boolean }) {
+  const bg   = dark ? INK    : PAPER;
+  const card = dark ? '#1F1B15' : PAPER_D;
+  const ink  = dark ? '#F5EFE2' : INK;
+  const ash  = dark ? '#8C8479' : ASH;
+  const rule = dark ? '#332E22' : RULE;
+
   return (
     <div style={{
-      minHeight: '100vh', background: PAPER, color: INK,
+      minHeight: '100vh', background: bg, color: ink,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '32px 24px', gap: 0,
+      padding: '32px 24px', gap: 0, overflowX: 'hidden',
     }}>
-      {/* Masthead */}
       <img
-        src="/icon.png"
-        alt="Alpha Whispr"
+        src="/icon.png" alt="Alpha Whispr"
         width={72} height={72}
         style={{ borderRadius: 20, marginBottom: 14, objectFit: 'cover' }}
       />
       <div style={{
-        fontFamily: SA.serif, fontSize: 32, fontWeight: 400,
-        letterSpacing: -1, color: INK, marginBottom: 6, lineHeight: 1,
+        fontFamily: SA.serif, fontSize: 'clamp(26px,8vw,34px)',
+        fontWeight: 400, letterSpacing: -1, color: ink,
+        marginBottom: 6, lineHeight: 1,
       }}>
         Alpha Whispr
       </div>
       <div style={{
-        fontFamily: SA.mono, fontSize: 9, color: SA.ash,
+        fontFamily: SA.mono, fontSize: 9, color: ash,
         letterSpacing: 3, textTransform: 'uppercase', marginBottom: 36,
       }}>
         Heard before spoken
       </div>
 
-      {/* Value prop */}
       <div style={{
-        border: `1px solid ${SA.rule}`, borderRadius: 14,
+        border: `1px solid ${rule}`, borderRadius: 14,
         padding: '20px 18px', marginBottom: 28, width: '100%', maxWidth: 320,
-        background: '#EDE6D3',
+        background: card,
       }}>
         {([
           ['▤', 'Live DeFi & RWA signal feed'],
@@ -68,38 +95,31 @@ function AuthGate({ onLogin, loading }: { onLogin: () => void; loading: boolean 
         ] as [string, string][]).map(([icon, text], i, arr) => (
           <div key={text} style={{
             display: 'flex', gap: 12, alignItems: 'center',
-            padding: '7px 0',
-            borderBottom: i < arr.length - 1 ? `0.5px solid ${SA.rule}` : 'none',
+            padding: '8px 0',
+            borderBottom: i < arr.length - 1 ? `0.5px solid ${rule}` : 'none',
           }}>
             <span style={{ fontFamily: SA.mono, fontSize: 14, color: SA.phosphorGlow, width: 18, textAlign: 'center' }}>{icon}</span>
-            <span style={{ fontFamily: SA.mono, fontSize: 11, color: INK }}>{text}</span>
+            <span style={{ fontFamily: SA.mono, fontSize: 'clamp(10px,3vw,12px)', color: ink }}>{text}</span>
           </div>
         ))}
       </div>
 
-      {/* Connect button */}
       <button
-        onClick={onLogin}
-        disabled={loading}
+        onClick={onLogin} disabled={loading}
         style={{
-          width: '100%', maxWidth: 320,
-          padding: '14px',
+          width: '100%', maxWidth: 320, padding: '14px',
           background: SA.aqua, color: '#fff',
           border: 'none', borderRadius: 14,
-          fontFamily: SA.mono, fontSize: 12, fontWeight: 700,
-          letterSpacing: 0.5, cursor: loading ? 'wait' : 'pointer',
-          opacity: loading ? 0.7 : 1,
-          marginBottom: 14,
+          fontFamily: SA.mono, fontSize: 'clamp(11px,3vw,13px)',
+          fontWeight: 700, letterSpacing: 0.5,
+          cursor: loading ? 'wait' : 'pointer',
+          opacity: loading ? 0.7 : 1, marginBottom: 14,
         }}
       >
         {loading ? 'Connecting…' : 'Connect with Privy →'}
       </button>
 
-      {/* Privy badge */}
-      <div style={{
-        fontFamily: SA.mono, fontSize: 9, color: SA.ash,
-        letterSpacing: 0.5, textAlign: 'center',
-      }}>
+      <div style={{ fontFamily: SA.mono, fontSize: 9, color: ash, letterSpacing: 0.5, textAlign: 'center' }}>
         Secured by{' '}
         <span style={{ color: SA.aqua, fontWeight: 700 }}>Privy</span>
         {' '}· Farcaster · Wallet
@@ -111,12 +131,20 @@ function AuthGate({ onLogin, loading }: { onLogin: () => void; loading: boolean 
 // ── Main frame page ────────────────────────────────────────────────────────
 export default function FramePage() {
   const { ready: privyReady, authenticated, login, user } = usePrivy();
+  const [dark, toggleDark] = useDark();
   const [loginLoading, setLoginLoading] = useState(false);
-  const [fid, setFid]           = useState<number | null>(null);
-  const [feed, setFeed]         = useState<FeedResponse | null>(null);
-  const [feedLoading, setFeedLoading] = useState(false);
-  const [error, setError]       = useState('');
-  const [view, setView]         = useState<View>('feed');
+  const [fid, setFid]                   = useState<number | null>(null);
+  const [feed, setFeed]                 = useState<FeedResponse | null>(null);
+  const [feedLoading, setFeedLoading]   = useState(false);
+  const [error, setError]               = useState('');
+  const [view, setView]                 = useState<View>('feed');
+  const [filter, setFilter]             = useState<FilterKey>('ALL');
+
+  const bg   = dark ? INK    : PAPER;
+  const bg2  = dark ? '#1F1B15' : PAPER_D;
+  const ink  = dark ? '#F5EFE2' : INK;
+  const ash  = dark ? '#8C8479' : ASH;
+  const rule = dark ? '#332E22' : RULE;
 
   // Signal ready to Warpcast immediately — before any auth check
   useEffect(() => {
@@ -126,26 +154,21 @@ export default function FramePage() {
   // Load feed after Privy auth resolves
   useEffect(() => {
     if (!privyReady || !authenticated) return;
-
     let cancelled = false;
+
     const loadFeed = async () => {
       setFeedLoading(true);
       try {
-        // Prefer FID from Privy's linked Farcaster account
         let resolvedFid: number | null = user?.farcaster?.fid ?? null;
-
-        // Fall back to Farcaster SDK context
         if (!resolvedFid) {
           const ctx = await sdk.context;
           resolvedFid = ctx?.user?.fid ?? null;
         }
-
         if (cancelled) return;
         if (resolvedFid) {
           setFid(resolvedFid);
           sdk.actions.addFrame().catch(() => {});
         }
-
         const res  = await fetch(`/api/feed?fid=${resolvedFid ?? 0}`);
         const data = await res.json();
         if (cancelled) return;
@@ -167,74 +190,154 @@ export default function FramePage() {
     try { await login(); } finally { setLoginLoading(false); }
   };
 
-  // Privy SDK initialising (brief, < 500ms usually)
+  // Filter logic (same as desktop FeedScreen)
+  const allSignals = feed ? [...(feed.free ?? []), ...(feed.locked ?? [])] : [];
+  const lockedIds  = new Set((feed?.locked ?? []).map((s) => s.id));
+  const filtered   = allSignals.filter((s) => {
+    if (filter === 'ALL')     return true;
+    if (filter === 'HIGH')    return s.severity === 'high';
+    if (filter === 'BOOSTED') return s.boosted;
+    return true;
+  });
+
+  // ── Privy initialising ──
   if (!privyReady) {
     return (
-      <div style={{
-        minHeight: '100vh', background: PAPER,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <span style={{ fontFamily: SA.serif, fontSize: 20, fontStyle: 'italic', color: INK }}>
-          Alpha Whispr
-        </span>
+      <div style={{ minHeight: '100vh', background: PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: SA.serif, fontSize: 20, fontStyle: 'italic', color: INK }}>Alpha Whispr</span>
       </div>
     );
   }
 
-  // Not authenticated — show gate
+  // ── Auth gate ──
   if (!authenticated) {
-    return <AuthGate onLogin={handleLogin} loading={loginLoading} />;
+    return <AuthGate onLogin={handleLogin} loading={loginLoading} dark={dark} />;
   }
 
-  // Authenticated — show app shell
+  // ── Authenticated app shell ──
   return (
     <div style={{
-      width: '100%', maxWidth: '424px', margin: '0 auto',
-      height: '100vh', display: 'flex', flexDirection: 'column',
-      overflow: 'hidden', background: PAPER, color: INK, fontFamily: SA.mono,
+      width: '100%',
+      maxWidth: '424px',
+      margin: '0 auto',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      overflowX: 'hidden',
+      background: bg,
+      color: ink,
+      fontFamily: SA.mono,
     }}>
-      <div style={{ flex: 1, overflowY: 'auto', background: PAPER }}>
+
+      {/* 1. Status bar mock (22px) */}
+      <StatusBar dark={dark} />
+
+      {/* 2. Masthead with title + theme toggle (28px) */}
+      <div style={{
+        flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '4px 14px 6px',
+        borderBottom: `1px solid ${rule}`,
+        background: bg2,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img
+            src="/icon.png" alt="Alpha Whispr"
+            width={22} height={22}
+            style={{ borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+          />
+          <div style={{ fontFamily: SA.serif, fontSize: 'clamp(13px,4vw,16px)', fontWeight: 500, color: ink, letterSpacing: -0.3, fontStyle: 'italic' }}>
+            Alpha Whispr
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontFamily: SA.mono, fontSize: 9, color: SA.phosphorGlow, letterSpacing: 0.5 }}>● LIVE</span>
+          <button
+            onClick={toggleDark}
+            title="Toggle theme"
+            style={{
+              width: 24, height: 24, borderRadius: 12,
+              border: `1px solid ${rule}`, cursor: 'pointer',
+              background: 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, color: ink,
+            }}
+          >
+            {dark ? '☾' : '☀'}
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Filter tabs ALL / HIGH / BOOSTED (32px) — only on feed view */}
+      {view === 'feed' && (
+        <div style={{
+          flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '5px 14px',
+          borderBottom: `0.5px solid ${rule}`,
+          background: bg,
+        }}>
+          {(['ALL', 'HIGH', 'BOOSTED'] as FilterKey[]).map((f) => (
+            <button key={f} onClick={() => setFilter(f)} style={{
+              border: `1px solid ${filter === f ? ink : rule}`,
+              background: filter === f ? ink : 'transparent',
+              color: filter === f ? bg : ash,
+              fontFamily: SA.mono,
+              fontSize: 'clamp(8px,2.5vw,10px)',
+              fontWeight: 600, letterSpacing: 1,
+              padding: '2px 8px', borderRadius: 0,
+              cursor: 'pointer', textTransform: 'uppercase',
+            }}>{f}</button>
+          ))}
+          <div style={{ flex: 1 }} />
+          <span style={{ fontFamily: SA.mono, fontSize: 9, color: ash }}>
+            {filtered.length} signals
+          </span>
+        </div>
+      )}
+
+      {/* 4. Scrollable content (flex: 1) */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: bg }}>
         {feedLoading ? (
           <div style={{
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
             minHeight: '60vh', gap: 12,
           }}>
-            <div style={{ fontFamily: SA.serif, fontSize: 20, fontStyle: 'italic', color: INK }}>
+            <div style={{ fontFamily: SA.serif, fontSize: 20, fontStyle: 'italic', color: ink }}>
               Alpha Whispr
             </div>
-            <div style={{ fontFamily: SA.mono, fontSize: 10, color: SA.ash, letterSpacing: 2 }}>
-              LOADING…
+            <div style={{ fontFamily: SA.mono, fontSize: 10, color: ash, letterSpacing: 2 }}>
+              SCANNING PROTOCOLS…
             </div>
           </div>
         ) : view === 'feed' ? (
-          <div className="feed-container">
+          <div style={{ paddingBottom: 8 }}>
             {error && (
-              <div style={{ padding: '10px 14px' }}>
+              <div style={{ padding: '10px 14px', border: `1px solid ${SA.rust}`, margin: '10px 14px' }}>
                 <span style={{ fontFamily: SA.mono, fontSize: 10, color: SA.rust }}>ERR: {error}</span>
               </div>
             )}
-            {feed?.free.map((signal) => (
-              <SignalCard key={signal.id} signal={signal} locked={false} fid={fid ?? 0} />
+            {filtered.map((signal) => (
+              <SignalCard
+                key={signal.id}
+                signal={signal}
+                locked={lockedIds.has(signal.id)}
+                fid={fid ?? 0}
+                dark={dark}
+              />
             ))}
-            {(feed?.locked.length ?? 0) > 0 && (
-              <p style={{
-                fontFamily: SA.mono, fontSize: 9, color: SA.ash,
-                textTransform: 'uppercase', letterSpacing: 2, padding: '8px 14px',
-              }}>
-                Locked · Cast to unlock
-              </p>
-            )}
-            {feed?.locked.map((signal) => (
-              <SignalCard key={signal.id} signal={signal} locked={true} fid={fid ?? 0} />
-            ))}
-            {!error && !feed && (
+            {!feedLoading && filtered.length === 0 && !error && (
               <div style={{ padding: '32px 14px', textAlign: 'center' }}>
-                <span style={{ fontFamily: SA.mono, fontSize: 10, color: SA.ash, letterSpacing: 2 }}>
-                  NO SIGNALS YET
+                <span style={{ fontFamily: SA.mono, fontSize: 10, color: ash, letterSpacing: 2 }}>
+                  NO SIGNALS MATCH THIS FILTER
                 </span>
               </div>
             )}
+            <div style={{ textAlign: 'center', padding: '12px 0 16px', fontFamily: SA.mono, fontSize: 9, letterSpacing: 2, color: ash }}>
+              — END OF EDITION —
+            </div>
           </div>
         ) : view === 'advisor' ? (
           <AdvisorFlow fid={fid ?? undefined} onBack={() => setView('feed')} />
@@ -242,17 +345,22 @@ export default function FramePage() {
           <ProfileView fid={fid} />
         ) : (
           <div style={{ padding: '32px 14px', textAlign: 'center' }}>
-            <span style={{ fontFamily: SA.mono, fontSize: 10, color: SA.ash, letterSpacing: 2 }}>
+            <span style={{ fontFamily: SA.mono, fontSize: 10, color: ash, letterSpacing: 2 }}>
               CONNECT FARCASTER IN PRIVY TO VIEW PROFILE
             </span>
           </div>
         )}
       </div>
 
-      {/* Bottom navbar */}
+      {/* 5. Live ticker band (20px) — ABOVE nav */}
+      <Ticker items={TICKER_ITEMS} />
+
+      {/* 6. Bottom nav (48px + safe area) */}
       <nav style={{
-        flexShrink: 0, height: '48px', display: 'flex', alignItems: 'stretch',
-        background: PAPER, borderTop: `1px solid ${SA.rule}`,
+        flexShrink: 0, height: '48px',
+        display: 'flex', alignItems: 'stretch',
+        background: dark ? '#1F1B15' : PAPER_D,
+        borderTop: `1px solid ${rule}`,
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {TABS.map((tab) => (
@@ -263,9 +371,14 @@ export default function FramePage() {
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: 2,
               background: 'transparent', border: 'none',
-              borderTop: view === tab.id ? `2px solid ${SA.phosphorGlow}` : '2px solid transparent',
-              cursor: 'pointer', fontFamily: SA.mono, fontSize: 9, letterSpacing: 0.5,
-              color: view === tab.id ? SA.phosphorGlow : SA.ash,
+              borderTop: view === tab.id
+                ? `2px solid ${SA.phosphorGlow}`
+                : '2px solid transparent',
+              cursor: 'pointer',
+              fontFamily: SA.mono,
+              fontSize: 'clamp(8px,2.5vw,10px)',
+              letterSpacing: 0.5,
+              color: view === tab.id ? SA.phosphorGlow : ash,
               transition: 'color .15s', paddingTop: 2,
             }}
           >

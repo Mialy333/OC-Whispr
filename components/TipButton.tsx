@@ -1,130 +1,219 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSendTransaction, useWallets, useConnectOrCreateWallet } from '@privy-io/react-auth';
-import { parseEther } from 'viem';
+import { createPublicClient, http, formatEther } from 'viem';
+import { base } from 'viem/chains';
 import { SA } from '@/components/ui';
 
 const mono = { fontFamily: SA.mono } as const;
 
-const TIPS = [
-  { label: 'Coffee', amount: '0.001', emoji: '☕' },
-  { label: 'Pizza',  amount: '0.005', emoji: '🍕' },
-  { label: 'Rocket', amount: '0.01',  emoji: '🚀' },
-] as const;
-
 const DONATION_ADDRESS =
   (process.env.NEXT_PUBLIC_DONATION_ADDRESS as `0x${string}` | undefined) ?? '0x0000000000000000000000000000000000000000';
 
-type State = 'idle' | 'picking' | 'pending' | 'success' | 'error';
+const publicClient = createPublicClient({ chain: base, transport: http() });
 
+type State = 'idle' | 'loading' | 'suggestion' | 'pending' | 'success' | 'error' | 'no_funds';
+
+interface Suggestion { amount: number; message: string; }
 interface Props { compact?: boolean; }
 
 export default function TipButton({ compact = false }: Props) {
-  const { sendTransaction }         = useSendTransaction();
-  const { wallets }                 = useWallets();
-  const { connectOrCreateWallet }   = useConnectOrCreateWallet();
+  const { sendTransaction }       = useSendTransaction();
+  const { wallets }               = useWallets();
+  const { connectOrCreateWallet } = useConnectOrCreateWallet();
+
   const [state, setState]           = useState<State>('idle');
+  const [balanceEth, setBalanceEth] = useState<number | null>(null);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [txHash, setTxHash]         = useState<string | null>(null);
   const [errMsg, setErrMsg]         = useState<string | null>(null);
 
-  const hasWallet = wallets.length > 0;
+  const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0];
+  const hasWallet = !!embeddedWallet;
 
-  const send = async (amount: string) => {
+  // Pre-fetch balance when wallet becomes available
+  useEffect(() => {
+    if (!embeddedWallet?.address) return;
+    publicClient
+      .getBalance({ address: embeddedWallet.address as `0x${string}` })
+      .then((b) => setBalanceEth(parseFloat(formatEther(b))))
+      .catch(() => setBalanceEth(null));
+  }, [embeddedWallet?.address]);
+
+  const fetchSuggestion = async () => {
+    setState('loading');
+    try {
+      // Fetch balance fresh at click time for accuracy
+      let bal = balanceEth;
+      if (embeddedWallet?.address) {
+        try {
+          const b = await publicClient.getBalance({ address: embeddedWallet.address as `0x${string}` });
+          bal = parseFloat(formatEther(b));
+          setBalanceEth(bal);
+        } catch { /* use cached */ }
+      }
+
+      if (bal !== null && bal < 0.001) {
+        setState('no_funds');
+        return;
+      }
+
+      const params = bal !== null ? `?balance=${bal.toFixed(6)}` : '';
+      const res = await fetch(`/api/tip-suggest${params}`);
+      const data = await res.json() as { amount?: number; message?: string; error?: string };
+
+      if (data.error === 'insufficient_balance') { setState('no_funds'); return; }
+
+      setSuggestion({
+        amount:  data.amount  ?? 0.002,
+        message: data.message ?? 'About the price of a coffee ☕',
+      });
+      setState('suggestion');
+    } catch {
+      // Fallback to default suggestion on any error
+      setSuggestion({ amount: 0.002, message: 'About the price of a coffee ☕' });
+      setState('suggestion');
+    }
+  };
+
+  const handleClick = () => {
+    if (!hasWallet) { connectOrCreateWallet(); return; }
+    fetchSuggestion();
+  };
+
+  const confirmSend = async () => {
+    if (!suggestion) return;
     setState('pending');
     try {
+      const amountWei = BigInt(Math.round(suggestion.amount * 1e18));
       const { hash } = await sendTransaction({
-        to:      DONATION_ADDRESS,
-        value:   parseEther(amount),
+        to:    DONATION_ADDRESS,
+        value: amountWei,
         chainId: 8453,
       });
       setTxHash(hash);
       setState('success');
+
+      // Fire-and-forget tip confirmation tracking
+      fetch('/api/tip-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ txHash: hash, amount: suggestion.amount, address: embeddedWallet?.address }),
+      }).catch(() => {});
     } catch (e) {
       setErrMsg(e instanceof Error ? e.message : 'Transaction failed');
       setState('error');
     }
   };
 
-  const handlePick = () => {
-    if (!hasWallet) {
-      connectOrCreateWallet();
-      return;
-    }
-    setState(state === 'picking' ? 'idle' : 'picking');
-  };
+  const reset = () => { setState('idle'); setErrMsg(null); setSuggestion(null); setTxHash(null); };
 
-  // ── Compact (header) variant ───────────────────────────────────────────────
+  // ── Compact (header) variant ──────────────────────────────────────────────
   if (compact) {
     if (state === 'pending') {
-      return (
-        <span style={{ ...mono, fontSize: 9, color: SA.terminalGreen, letterSpacing: 0.5 }}>
-          …
-        </span>
-      );
+      return <span style={{ ...mono, fontSize: 9, color: SA.terminalGreen }}>…</span>;
     }
     if (state === 'success') {
-      return (
-        <span style={{ ...mono, fontSize: 9, color: SA.phosphorGlow, letterSpacing: 0.5 }}>
-          ✓
-        </span>
-      );
+      return <span style={{ ...mono, fontSize: 9, color: SA.phosphorGlow }}>✓</span>;
     }
 
     return (
       <div style={{ position: 'relative' }}>
         <button
-          onClick={handlePick}
+          onClick={state === 'suggestion' ? reset : handleClick}
+          disabled={state === 'loading'}
           style={{
             ...mono, fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase',
-            color: state === 'picking' ? SA.amber : 'var(--text-muted)',
+            color: state === 'suggestion' ? SA.amber : 'var(--text-muted)',
             background: 'transparent',
-            border: `1px solid ${state === 'picking' ? SA.amber : 'var(--border)'}`,
+            border: `1px solid ${state === 'suggestion' ? SA.amber : 'var(--border)'}`,
             borderRadius: 4, padding: '2px 8px', height: 18,
-            cursor: 'pointer', lineHeight: 1,
+            cursor: state === 'loading' ? 'wait' : 'pointer', lineHeight: 1,
+            opacity: state === 'loading' ? 0.5 : 1,
           }}
         >
-          ☕ TIP
+          {state === 'loading' ? '…' : '☕ TIP'}
         </button>
 
-        {state === 'picking' && (
+        {(state === 'suggestion' || state === 'no_funds' || state === 'error') && (
           <div style={{
             position: 'absolute', top: 22, right: 0,
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border)',
-            borderRadius: 8, padding: 8,
-            zIndex: 50, minWidth: 110,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            borderRadius: 8, padding: 10,
+            zIndex: 50, width: 220,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
           }}>
-            {TIPS.map(({ label, amount, emoji }) => (
-              <button
-                key={amount}
-                onClick={() => send(amount)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  width: '100%', padding: '6px 8px',
-                  background: 'transparent',
-                  border: 'none', borderRadius: 6,
-                  cursor: 'pointer', textAlign: 'left',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tertiary, rgba(0,0,0,0.06))'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-              >
-                <span style={{ fontSize: 13 }}>{emoji}</span>
-                <span style={{ ...mono, fontSize: 10, color: 'var(--text-primary)', fontWeight: 600 }}>{label}</span>
-                <span style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>{amount}</span>
-              </button>
-            ))}
-            {errMsg && (
-              <div style={{ ...mono, fontSize: 8, color: SA.rust, padding: '4px 8px 0', borderTop: '0.5px solid var(--border)', marginTop: 4 }}>
-                ⚠ {errMsg}
-                <button
-                  onClick={() => { setErrMsg(null); setState('picking'); }}
-                  style={{ ...mono, fontSize: 8, color: SA.aqua, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 6 }}
+            {state === 'no_funds' && (
+              <>
+                <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.55, marginBottom: 8 }}>
+                  You need ETH on Base to tip.
+                </div>
+                <a
+                  href="https://bridge.base.org"
+                  target="_blank" rel="noreferrer"
+                  style={{ ...mono, fontSize: 9, color: SA.aqua, textDecoration: 'none' }}
                 >
-                  retry
+                  Bridge here →
+                </a>
+                <button onClick={reset} style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 12 }}>
+                  Close
                 </button>
-              </div>
+              </>
+            )}
+            {state === 'error' && (
+              <>
+                <div style={{ ...mono, fontSize: 9, color: SA.rust, marginBottom: 6 }}>⚠ {errMsg}</div>
+                <button onClick={reset} style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Close</button>
+              </>
+            )}
+            {state === 'suggestion' && suggestion && (
+              <>
+                <div style={{
+                  background: 'var(--bg-terminal, #0C1A0C)',
+                  border: '1px solid rgba(0,255,65,0.2)',
+                  borderRadius: 6, padding: '8px 10px', marginBottom: 10,
+                }}>
+                  {balanceEth !== null && (
+                    <div style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      Balance: {balanceEth.toFixed(4)} ETH
+                    </div>
+                  )}
+                  <div style={{ ...mono, fontSize: 9, color: SA.phosphorGlow, lineHeight: 1.55 }}>
+                    {suggestion.message}
+                  </div>
+                  <div style={{ ...mono, fontSize: 10, color: SA.terminalGreen, fontWeight: 700, marginTop: 4 }}>
+                    Send {suggestion.amount} ETH?
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={confirmSend}
+                    style={{
+                      flex: 1, ...mono, fontSize: 9, fontWeight: 700,
+                      color: SA.phosphorGlow,
+                      background: 'var(--bg-terminal, #0C1A0C)',
+                      border: `1px solid ${SA.phosphorGlow}`,
+                      borderRadius: 6, padding: '5px 0', cursor: 'pointer',
+                    }}
+                  >
+                    YES, SEND
+                  </button>
+                  <button
+                    onClick={reset}
+                    style={{
+                      flex: 1, ...mono, fontSize: 9,
+                      color: 'var(--text-muted)',
+                      background: 'transparent',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6, padding: '5px 0', cursor: 'pointer',
+                    }}
+                  >
+                    LATER
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -132,22 +221,25 @@ export default function TipButton({ compact = false }: Props) {
     );
   }
 
-  // ── Full variant ───────────────────────────────────────────────────────────
+  // ── Full variant ──────────────────────────────────────────────────────────
   if (state === 'success') {
     return (
       <div style={{
-        border: `1px solid ${SA.phosphorGlow}`,
-        borderRadius: 12, padding: '12px 14px',
-        background: 'var(--bg-terminal, #0C1A0C)',
+        border: `1px solid ${SA.phosphorGlow}`, borderRadius: 12,
+        padding: '14px', background: 'var(--bg-terminal, #0C1A0C)',
         textAlign: 'center',
       }}>
-        <div style={{ ...mono, fontSize: 11, color: SA.phosphorGlow, fontWeight: 700, marginBottom: 4 }}>
-          ✓ TIP SENT
+        <div style={{ ...mono, fontSize: 12, color: SA.phosphorGlow, fontWeight: 700, marginBottom: 6 }}>
+          ✓ Sent! Thank you 🎉
         </div>
         {txHash && (
-          <div style={{ ...mono, fontSize: 9, color: SA.terminalGreen, opacity: 0.7, wordBreak: 'break-all' }}>
-            {txHash.slice(0, 12)}…{txHash.slice(-6)}
-          </div>
+          <a
+            href={`https://basescan.org/tx/${txHash}`}
+            target="_blank" rel="noreferrer"
+            style={{ ...mono, fontSize: 9, color: SA.aqua, textDecoration: 'none', wordBreak: 'break-all' }}
+          >
+            View on BaseScan →
+          </a>
         )}
       </div>
     );
@@ -157,14 +249,7 @@ export default function TipButton({ compact = false }: Props) {
     return (
       <div style={{ border: `1px solid ${SA.rust}`, borderRadius: 12, padding: '12px 14px', background: 'var(--bg-secondary)' }}>
         <div style={{ ...mono, fontSize: 10, color: SA.rust, marginBottom: 8 }}>⚠ {errMsg ?? 'Transaction failed'}</div>
-        <button
-          onClick={() => { setState('idle'); setErrMsg(null); }}
-          style={{
-            ...mono, fontSize: 10, color: 'var(--text-muted)',
-            background: 'transparent', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '4px 12px', cursor: 'pointer',
-          }}
-        >
+        <button onClick={reset} style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 12px', cursor: 'pointer' }}>
           Try again
         </button>
       </div>
@@ -185,52 +270,103 @@ export default function TipButton({ compact = false }: Props) {
     );
   }
 
-  if (state === 'picking') {
+  if (state === 'no_funds') {
     return (
       <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', background: 'var(--bg-secondary)' }}>
-        <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', letterSpacing: 1.5, marginBottom: 10, textTransform: 'uppercase' }}>
-          Tip on Base
+        <div style={{ ...mono, fontSize: 11, color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.5 }}>
+          You need ETH on Base to tip.
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {TIPS.map(({ label, amount, emoji }) => (
-            <button
-              key={amount}
-              onClick={() => send(amount)}
-              style={{
-                flex: 1, padding: '10px 0',
-                border: `1.5px solid ${SA.phosphorGlow}`,
-                borderRadius: 10, background: 'var(--bg-primary)',
-                cursor: 'pointer', textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 16 }}>{emoji}</div>
-              <div style={{ ...mono, fontSize: 9, color: SA.phosphorGlow, fontWeight: 700, marginTop: 3 }}>{label}</div>
-              <div style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', marginTop: 2 }}>{amount} ETH</div>
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setState('idle')}
+        <a
+          href="https://bridge.base.org"
+          target="_blank" rel="noreferrer"
           style={{
-            ...mono, fontSize: 9, color: 'var(--text-muted)',
-            background: 'transparent', border: 'none',
-            cursor: 'pointer', marginTop: 8, letterSpacing: 0.5,
+            display: 'inline-block', ...mono, fontSize: 11, color: SA.aqua,
+            border: `1px solid ${SA.aqua}`, borderRadius: 8,
+            padding: '6px 14px', textDecoration: 'none',
           }}
         >
-          Cancel
-        </button>
+          Bridge here →
+        </a>
       </div>
     );
   }
 
-  // idle — no wallet: show connect CTA; wallet exists: show tip button
+  if (state === 'suggestion' && suggestion) {
+    return (
+      <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{
+          background: 'var(--bg-terminal, #0C1A0C)',
+          border: '1px solid rgba(0,255,65,0.2)',
+          padding: '14px',
+        }}>
+          <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 8 }}>
+            ALPHA WHISPR AGENT
+          </div>
+          {balanceEth !== null && (
+            <div style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', marginBottom: 6 }}>
+              I see you have {balanceEth.toFixed(4)} ETH on Base.
+            </div>
+          )}
+          <div style={{ ...mono, fontSize: 12, color: SA.phosphorGlow, lineHeight: 1.6, marginBottom: 8 }}>
+            {suggestion.message}
+          </div>
+          <div style={{ ...mono, fontSize: 13, color: SA.terminalGreen, fontWeight: 700 }}>
+            Send {suggestion.amount} ETH to support Alpha Whispr?
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 0 }}>
+          <button
+            onClick={confirmSend}
+            style={{
+              flex: 1, padding: '12px',
+              background: 'var(--bg-terminal, #0C1A0C)',
+              border: 'none', borderTop: `1px solid ${SA.phosphorGlow}`,
+              cursor: 'pointer',
+              ...mono, fontSize: 11, fontWeight: 700,
+              color: SA.phosphorGlow, letterSpacing: 0.8,
+            }}
+          >
+            YES, SEND
+          </button>
+          <button
+            onClick={reset}
+            style={{
+              flex: 1, padding: '12px',
+              background: 'transparent',
+              border: 'none', borderTop: '1px solid var(--border)', borderLeft: '1px solid var(--border)',
+              cursor: 'pointer',
+              ...mono, fontSize: 11,
+              color: 'var(--text-muted)', letterSpacing: 0.8,
+            }}
+          >
+            MAYBE LATER
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // idle
+  if (state === 'loading') {
+    return (
+      <div style={{
+        width: '100%', padding: '11px',
+        border: '1px solid var(--border)', borderRadius: 12,
+        ...mono, fontSize: 11, color: 'var(--text-muted)',
+        textAlign: 'center', letterSpacing: 0.5,
+      }}>
+        Agent checking your wallet…
+      </div>
+    );
+  }
+
   if (!hasWallet) {
     return (
       <button
         onClick={() => connectOrCreateWallet()}
         style={{
           width: '100%', padding: '11px',
-          border: `1px solid var(--border)`,
+          border: '1px solid var(--border)',
           background: 'transparent', borderRadius: 12, cursor: 'pointer',
           ...mono, fontSize: 11, color: 'var(--text-muted)', letterSpacing: 0.5,
         }}
@@ -242,7 +378,7 @@ export default function TipButton({ compact = false }: Props) {
 
   return (
     <button
-      onClick={() => setState('picking')}
+      onClick={handleClick}
       style={{
         width: '100%', padding: '11px',
         border: `1.5px solid ${SA.amber}`,

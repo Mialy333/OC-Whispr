@@ -92,9 +92,9 @@ function AuthGate({ onLogin, loading, dark }: { onLogin: () => void; loading: bo
         background: card,
       }}>
         {([
-          ['▤', 'Live DeFi & RWA signal feed'],
-          ['◈', 'AI yield advisor, personalized'],
-          ['◉', 'Cast-to-unlock alpha reports'],
+          ['▤', 'Live DeFi, RWA & Stablecoin signals'],
+          ['◈', 'Personalized yield strategies'],
+          ['◉', 'Premium alpha reports'],
         ] as [string, string][]).map(([icon, text], i, arr) => (
           <div key={text} style={{
             display: 'flex', gap: 12, alignItems: 'center',

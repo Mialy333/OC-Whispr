@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSendTransaction, useWallets, useConnectOrCreateWallet, useConnectWallet, useFundWallet } from '@privy-io/react-auth';
+import { usePrivy, useSendTransaction, useWallets, useConnectOrCreateWallet, useFundWallet } from '@privy-io/react-auth';
 import { createPublicClient, http, formatEther } from 'viem';
 import { base } from 'viem/chains';
 import { SA } from '@/components/ui';
@@ -19,10 +19,10 @@ interface Suggestion { amount: number; message: string; }
 interface Props { compact?: boolean; }
 
 export default function TipButton({ compact = false }: Props) {
+  const { linkWallet }            = usePrivy();
   const { sendTransaction }       = useSendTransaction();
   const { wallets }               = useWallets();
   const { connectOrCreateWallet } = useConnectOrCreateWallet();
-  const { connectWallet }         = useConnectWallet();
   const { fundWallet }            = useFundWallet();
 
   const [state, setState]           = useState<State>('idle');
@@ -34,14 +34,34 @@ export default function TipButton({ compact = false }: Props) {
   const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0];
   const hasWallet = !!embeddedWallet;
 
-  // Pre-fetch balance when wallet becomes available
-  useEffect(() => {
-    if (!embeddedWallet?.address) return;
+  const checkBalance = (address: string) =>
     publicClient
-      .getBalance({ address: embeddedWallet.address as `0x${string}` })
+      .getBalance({ address: address as `0x${string}` })
       .then((b) => setBalanceEth(parseFloat(formatEther(b))))
       .catch(() => setBalanceEth(null));
+
+  // Fetch balance on mount and whenever a new wallet is linked
+  useEffect(() => {
+    if (!embeddedWallet?.address) return;
+    checkBalance(embeddedWallet.address);
   }, [embeddedWallet?.address]);
+
+  // After linkWallet() resolves the wallets array grows — re-check balance
+  // and advance past no_funds if ETH is now available
+  useEffect(() => {
+    if (wallets.length === 0) return;
+    const w = wallets.find((x) => x.walletClientType === 'privy') ?? wallets[0];
+    if (!w?.address) return;
+    publicClient
+      .getBalance({ address: w.address as `0x${string}` })
+      .then((b) => {
+        const bal = parseFloat(formatEther(b));
+        setBalanceEth(bal);
+        if (bal >= 0.001 && state === 'no_funds') fetchSuggestion();
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallets.length]);
 
   const fetchSuggestion = async () => {
     setState('loading');
@@ -86,17 +106,16 @@ export default function TipButton({ compact = false }: Props) {
 
   const handleOnramp = () => {
     if (embeddedWallet?.address) {
-      fundWallet(embeddedWallet.address, { chain: base });
+      fundWallet(embeddedWallet.address, { chain: base, asset: 'native-currency' });
     } else {
-      // Create embedded wallet first, then the user can fund it
       connectOrCreateWallet();
     }
   };
 
-  const handleConnectExternal = async () => {
-    connectWallet();
-    // After modal closes, wallets list re-renders; useEffect re-fetches balance.
-    // If balance is still 0 the no_funds panel stays until user acts.
+  const handleConnectExternal = () => {
+    linkWallet();
+    // After linkWallet() resolves, useWallets() updates → wallets.length effect fires
+    // → balance re-checked → auto-advances if sufficient
   };
 
   const confirmSend = async () => {

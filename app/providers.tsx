@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { PrivyProvider } from '@privy-io/react-auth';
+import { base } from 'viem/chains';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const PRIVY_APP_ID = 'cmnx9n2cd00210cl536akk4pe';
@@ -37,6 +38,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         appId={PRIVY_APP_ID}
         config={{
           loginMethods: ['farcaster', 'wallet'],
+          defaultChain: base,
+          supportedChains: [base],
+          embeddedWallets: {
+            createOnLogin: 'users-without-wallets',
+          },
           appearance: {
             theme: 'light',
             accentColor: '#3E6FA8',

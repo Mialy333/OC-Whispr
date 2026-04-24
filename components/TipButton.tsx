@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSendTransaction, useWallets, useConnectOrCreateWallet } from '@privy-io/react-auth';
+import { useSendTransaction, useWallets, useConnectOrCreateWallet, useConnectWallet, useFundWallet } from '@privy-io/react-auth';
 import { createPublicClient, http, formatEther } from 'viem';
 import { base } from 'viem/chains';
 import { SA } from '@/components/ui';
@@ -22,6 +22,8 @@ export default function TipButton({ compact = false }: Props) {
   const { sendTransaction }       = useSendTransaction();
   const { wallets }               = useWallets();
   const { connectOrCreateWallet } = useConnectOrCreateWallet();
+  const { connectWallet }         = useConnectWallet();
+  const { fundWallet }            = useFundWallet();
 
   const [state, setState]           = useState<State>('idle');
   const [balanceEth, setBalanceEth] = useState<number | null>(null);
@@ -78,8 +80,23 @@ export default function TipButton({ compact = false }: Props) {
   };
 
   const handleClick = () => {
-    if (!hasWallet) { connectOrCreateWallet(); return; }
+    if (!hasWallet) { setState('no_funds'); return; }
     fetchSuggestion();
+  };
+
+  const handleOnramp = () => {
+    if (embeddedWallet?.address) {
+      fundWallet(embeddedWallet.address, { chain: base });
+    } else {
+      // Create embedded wallet first, then the user can fund it
+      connectOrCreateWallet();
+    }
+  };
+
+  const handleConnectExternal = async () => {
+    connectWallet();
+    // After modal closes, wallets list re-renders; useEffect re-fetches balance.
+    // If balance is still 0 the no_funds panel stays until user acts.
   };
 
   const confirmSend = async () => {
@@ -150,14 +167,39 @@ export default function TipButton({ compact = false }: Props) {
                 <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.55, marginBottom: 8 }}>
                   You need ETH on Base to tip.
                 </div>
-                <a
-                  href="https://bridge.base.org"
-                  target="_blank" rel="noreferrer"
-                  style={{ ...mono, fontSize: 9, color: SA.aqua, textDecoration: 'none' }}
-                >
-                  Bridge here →
-                </a>
-                <button onClick={reset} style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 12 }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                  <button
+                    onClick={handleOnramp}
+                    style={{
+                      flex: 1, ...mono, fontSize: 9, fontWeight: 700,
+                      color: SA.phosphorGlow,
+                      background: 'var(--bg-terminal, #0C1A0C)',
+                      border: `1px solid ${SA.phosphorGlow}`,
+                      borderRadius: 6, padding: '5px 4px', cursor: 'pointer',
+                      lineHeight: 1.3, textAlign: 'center',
+                    }}
+                  >
+                    ADD ETH
+                  </button>
+                  <button
+                    onClick={handleConnectExternal}
+                    style={{
+                      flex: 1, ...mono, fontSize: 9, fontWeight: 700,
+                      color: SA.aqua,
+                      background: 'transparent',
+                      border: `1px solid ${SA.aqua}`,
+                      borderRadius: 6, padding: '5px 4px', cursor: 'pointer',
+                      lineHeight: 1.3, textAlign: 'center',
+                    }}
+                  >
+                    CONNECT
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <span style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', flex: 1, textAlign: 'center', lineHeight: 1.4 }}>Card or Apple Pay</span>
+                  <span style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', flex: 1, textAlign: 'center', lineHeight: 1.4 }}>MetaMask & more</span>
+                </div>
+                <button onClick={reset} style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, width: '100%', textAlign: 'right' }}>
                   Close
                 </button>
               </>
@@ -273,20 +315,52 @@ export default function TipButton({ compact = false }: Props) {
   if (state === 'no_funds') {
     return (
       <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', background: 'var(--bg-secondary)' }}>
-        <div style={{ ...mono, fontSize: 11, color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.5 }}>
+        <div style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 12, textTransform: 'uppercase' }}>
           You need ETH on Base to tip.
         </div>
-        <a
-          href="https://bridge.base.org"
-          target="_blank" rel="noreferrer"
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <button
+            onClick={handleOnramp}
+            style={{
+              flex: 1, padding: '11px 8px',
+              background: 'var(--bg-terminal, #0C1A0C)',
+              border: `1.5px solid ${SA.phosphorGlow}`,
+              borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+            }}
+          >
+            <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: SA.phosphorGlow, marginBottom: 4 }}>
+              ADD ETH
+            </div>
+            <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+              Buy with card or Apple Pay
+            </div>
+          </button>
+          <button
+            onClick={handleConnectExternal}
+            style={{
+              flex: 1, padding: '11px 8px',
+              background: 'transparent',
+              border: `1.5px solid ${SA.aqua}`,
+              borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+            }}
+          >
+            <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: SA.aqua, marginBottom: 4 }}>
+              CONNECT WALLET
+            </div>
+            <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+              MetaMask, Coinbase & more
+            </div>
+          </button>
+        </div>
+        <button
+          onClick={reset}
           style={{
-            display: 'inline-block', ...mono, fontSize: 11, color: SA.aqua,
-            border: `1px solid ${SA.aqua}`, borderRadius: 8,
-            padding: '6px 14px', textDecoration: 'none',
+            width: '100%', ...mono, fontSize: 9, color: 'var(--text-muted)',
+            background: 'none', border: 'none', cursor: 'pointer', paddingTop: 4,
           }}
         >
-          Bridge here →
-        </a>
+          Cancel
+        </button>
       </div>
     );
   }
@@ -360,21 +434,8 @@ export default function TipButton({ compact = false }: Props) {
     );
   }
 
-  if (!hasWallet) {
-    return (
-      <button
-        onClick={() => connectOrCreateWallet()}
-        style={{
-          width: '100%', padding: '11px',
-          border: '1px solid var(--border)',
-          background: 'transparent', borderRadius: 12, cursor: 'pointer',
-          ...mono, fontSize: 11, color: 'var(--text-muted)', letterSpacing: 0.5,
-        }}
-      >
-        Connect wallet to tip on Base
-      </button>
-    );
-  }
+  // No wallet yet — show the two-option panel directly
+  if (!hasWallet) return null; // unreachable: handleClick sets no_funds first
 
   return (
     <button

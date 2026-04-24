@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSendTransaction } from '@privy-io/react-auth';
+import { useSendTransaction, useWallets, useConnectOrCreateWallet } from '@privy-io/react-auth';
 import { parseEther } from 'viem';
 import { SA } from '@/components/ui';
 
@@ -21,10 +21,14 @@ type State = 'idle' | 'picking' | 'pending' | 'success' | 'error';
 interface Props { compact?: boolean; }
 
 export default function TipButton({ compact = false }: Props) {
-  const { sendTransaction } = useSendTransaction();
-  const [state, setState]   = useState<State>('idle');
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const { sendTransaction }         = useSendTransaction();
+  const { wallets }                 = useWallets();
+  const { connectOrCreateWallet }   = useConnectOrCreateWallet();
+  const [state, setState]           = useState<State>('idle');
+  const [txHash, setTxHash]         = useState<string | null>(null);
+  const [errMsg, setErrMsg]         = useState<string | null>(null);
+
+  const hasWallet = wallets.length > 0;
 
   const send = async (amount: string) => {
     setState('pending');
@@ -40,6 +44,14 @@ export default function TipButton({ compact = false }: Props) {
       setErrMsg(e instanceof Error ? e.message : 'Transaction failed');
       setState('error');
     }
+  };
+
+  const handlePick = () => {
+    if (!hasWallet) {
+      connectOrCreateWallet();
+      return;
+    }
+    setState(state === 'picking' ? 'idle' : 'picking');
   };
 
   // ── Compact (header) variant ───────────────────────────────────────────────
@@ -62,7 +74,7 @@ export default function TipButton({ compact = false }: Props) {
     return (
       <div style={{ position: 'relative' }}>
         <button
-          onClick={() => setState(state === 'picking' ? 'idle' : 'picking')}
+          onClick={handlePick}
           style={{
             ...mono, fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase',
             color: state === 'picking' ? SA.amber : 'var(--text-muted)',
@@ -106,7 +118,12 @@ export default function TipButton({ compact = false }: Props) {
             {errMsg && (
               <div style={{ ...mono, fontSize: 8, color: SA.rust, padding: '4px 8px 0', borderTop: '0.5px solid var(--border)', marginTop: 4 }}>
                 ⚠ {errMsg}
-                <button onClick={() => { setErrMsg(null); setState('picking'); }} style={{ ...mono, fontSize: 8, color: SA.aqua, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 6 }}>retry</button>
+                <button
+                  onClick={() => { setErrMsg(null); setState('picking'); }}
+                  style={{ ...mono, fontSize: 8, color: SA.aqua, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 6 }}
+                >
+                  retry
+                </button>
               </div>
             )}
           </div>
@@ -203,6 +220,23 @@ export default function TipButton({ compact = false }: Props) {
           Cancel
         </button>
       </div>
+    );
+  }
+
+  // idle — no wallet: show connect CTA; wallet exists: show tip button
+  if (!hasWallet) {
+    return (
+      <button
+        onClick={() => connectOrCreateWallet()}
+        style={{
+          width: '100%', padding: '11px',
+          border: `1px solid var(--border)`,
+          background: 'transparent', borderRadius: 12, cursor: 'pointer',
+          ...mono, fontSize: 11, color: 'var(--text-muted)', letterSpacing: 0.5,
+        }}
+      >
+        Connect wallet to tip on Base
+      </button>
     );
   }
 

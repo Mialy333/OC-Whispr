@@ -18,11 +18,13 @@ const DONATION_ADDRESS =
 
 type State = 'idle' | 'picking' | 'pending' | 'success' | 'error';
 
-export default function TipButton() {
-  const { sendTransaction }  = useSendTransaction();
-  const [state, setState]    = useState<State>('idle');
-  const [txHash, setTxHash]  = useState<string | null>(null);
-  const [errMsg, setErrMsg]  = useState<string | null>(null);
+interface Props { compact?: boolean; }
+
+export default function TipButton({ compact = false }: Props) {
+  const { sendTransaction } = useSendTransaction();
+  const [state, setState]   = useState<State>('idle');
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   const send = async (amount: string) => {
     setState('pending');
@@ -40,6 +42,80 @@ export default function TipButton() {
     }
   };
 
+  // ── Compact (header) variant ───────────────────────────────────────────────
+  if (compact) {
+    if (state === 'pending') {
+      return (
+        <span style={{ ...mono, fontSize: 9, color: SA.terminalGreen, letterSpacing: 0.5 }}>
+          …
+        </span>
+      );
+    }
+    if (state === 'success') {
+      return (
+        <span style={{ ...mono, fontSize: 9, color: SA.phosphorGlow, letterSpacing: 0.5 }}>
+          ✓
+        </span>
+      );
+    }
+
+    return (
+      <div style={{ position: 'relative' }}>
+        <button
+          onClick={() => setState(state === 'picking' ? 'idle' : 'picking')}
+          style={{
+            ...mono, fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase',
+            color: state === 'picking' ? SA.amber : 'var(--text-muted)',
+            background: 'transparent',
+            border: `1px solid ${state === 'picking' ? SA.amber : 'var(--border)'}`,
+            borderRadius: 4, padding: '2px 8px', height: 18,
+            cursor: 'pointer', lineHeight: 1,
+          }}
+        >
+          ☕ TIP
+        </button>
+
+        {state === 'picking' && (
+          <div style={{
+            position: 'absolute', top: 22, right: 0,
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: 8, padding: 8,
+            zIndex: 50, minWidth: 110,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+          }}>
+            {TIPS.map(({ label, amount, emoji }) => (
+              <button
+                key={amount}
+                onClick={() => send(amount)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  width: '100%', padding: '6px 8px',
+                  background: 'transparent',
+                  border: 'none', borderRadius: 6,
+                  cursor: 'pointer', textAlign: 'left',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-tertiary, rgba(0,0,0,0.06))'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+              >
+                <span style={{ fontSize: 13 }}>{emoji}</span>
+                <span style={{ ...mono, fontSize: 10, color: 'var(--text-primary)', fontWeight: 600 }}>{label}</span>
+                <span style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>{amount}</span>
+              </button>
+            ))}
+            {errMsg && (
+              <div style={{ ...mono, fontSize: 8, color: SA.rust, padding: '4px 8px 0', borderTop: '0.5px solid var(--border)', marginTop: 4 }}>
+                ⚠ {errMsg}
+                <button onClick={() => { setErrMsg(null); setState('picking'); }} style={{ ...mono, fontSize: 8, color: SA.aqua, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 6 }}>retry</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Full variant ───────────────────────────────────────────────────────────
   if (state === 'success') {
     return (
       <div style={{

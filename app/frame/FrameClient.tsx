@@ -9,6 +9,7 @@ import SignalDetail from '@/components/SignalDetail';
 import AdvisorFlow from '@/components/AdvisorFlow';
 import ProfileView from '@/components/ProfileView';
 import TerminalAnimation from '@/components/TerminalAnimation';
+import TipButton from '@/components/TipButton';
 import { SA, StatusBar, Ticker } from '@/components/ui';
 import type { AlphaSignal } from '@/types';
 
@@ -308,6 +309,7 @@ export default function FrameClient() {
               }} />
               <span style={{ fontFamily: SA.mono, fontSize: 9, color: SA.phosphorGlow, letterSpacing: 0.8 }}>LIVE</span>
             </span>
+          <TipButton compact />
           <button
             onClick={toggleDark}
             title="Toggle theme"

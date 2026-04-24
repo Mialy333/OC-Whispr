@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { SA, PButton } from '@/components/ui';
+import TipButton from '@/components/TipButton';
 import type { UserProfile, AdvisorResponse, YieldAdvice } from '@/types/advisor';
 import type { AlphaSignal } from '@/types';
 
@@ -174,10 +175,14 @@ export default function AdvisorFlow({ fid, onBack, prefilledSignal }: Props) {
           ))}
         </div>
 
+        <div style={{ marginTop: 14 }}>
+          <TipButton />
+        </div>
+
         <button
           onClick={() => { setResult(null); setStep(1); setRisk(null); setCapital(null); setAssets([]); }}
           style={{
-            ...mono, width: '100%', marginTop: 14, padding: '10px',
+            ...mono, width: '100%', marginTop: 10, padding: '10px',
             border: '1px solid var(--border)', borderRadius: 10,
             background: 'var(--bg-primary)', cursor: 'pointer',
             fontSize: 10, color: 'var(--text-muted)', letterSpacing: 1,

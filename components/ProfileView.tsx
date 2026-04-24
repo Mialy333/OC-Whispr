@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import sdk from '@farcaster/miniapp-sdk';
 import { SA } from '@/components/ui';
+import TipButton from '@/components/TipButton';
 import type { RewardsStatus } from '@/lib/rewards';
 
 const mono  = { fontFamily: SA.mono  } as const;
@@ -322,6 +323,11 @@ export default function ProfileView({ fid }: Props) {
             DeFiLlama · CoinGecko · on-chain
           </div>
         </div>
+      </div>
+
+      {/* Tip jar */}
+      <div style={{ marginBottom: 10 }}>
+        <TipButton />
       </div>
 
       {/* Disconnect */}

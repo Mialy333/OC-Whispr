@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSignalById } from '@/lib/agents/signal-cache';
 import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
@@ -57,26 +56,25 @@ async function analyze(signalJson: string): Promise<Analysis> {
   throw new Error('All models failed');
 }
 
-export async function GET(req: NextRequest) {
-  const id = req.nextUrl.searchParams.get('id');
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-
-  const signal = getSignalById(id);
-  if (!signal) return NextResponse.json({ error: 'Signal not found' }, { status: 404 });
-
-  const cacheKey = `signal-analysis:${id}`;
-
+export async function POST(req: NextRequest) {
   try {
+    const body = await req.json() as { id?: string; signal?: Record<string, unknown> };
+    const { id, signal } = body;
+    if (!id || !signal) {
+      return NextResponse.json({ error: 'id and signal required' }, { status: 400 });
+    }
+
+    const cacheKey = `signal-analysis:${id}`;
     const redis = await getRedis();
     const cached = await redis.get(cacheKey);
     if (cached) return NextResponse.json(JSON.parse(cached as string));
 
     const result = await analyze(JSON.stringify({
-      protocol: signal.protocolName,
-      title: signal.title,
-      summary: signal.summary,
+      protocol:  signal.protocolName,
+      title:     signal.title,
+      summary:   signal.summary,
       dataPoint: signal.dataPoint,
-      severity: signal.severity,
+      severity:  signal.severity,
     }));
 
     await redis.set(cacheKey, JSON.stringify(result), { EX: 3600 });

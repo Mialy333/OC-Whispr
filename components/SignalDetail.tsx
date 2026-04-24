@@ -22,12 +22,16 @@ export default function SignalDetail({ signal, onAdvisor, onBack }: Props) {
   useEffect(() => {
     setLoading(true);
     setAnalysis(null);
-    fetch(`/api/signal-analysis?id=${signal.id}`)
+    fetch('/api/signal-analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: signal.id, signal }),
+    })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d && !d.error) setAnalysis(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [signal.id]);
+  }, [signal.id, signal]);
 
   const ts = new Date(signal.timestamp).toLocaleString('en-US', {
     month: 'short', day: 'numeric',

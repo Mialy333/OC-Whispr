@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
       ? await curateForUser(fid, rawSignals)
       : rawSignals;
 
-    const free   = signals.slice(0, 2);
-    const locked = signals.slice(2);
+    const free   = signals.slice(0, 4);
+    const locked = signals.slice(4);
 
     return NextResponse.json(
       { free, locked, total: signals.length },

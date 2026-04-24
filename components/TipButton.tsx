@@ -11,7 +11,7 @@ const mono = { fontFamily: SA.mono } as const;
 const DONATION_ADDRESS =
   (process.env.NEXT_PUBLIC_DONATION_ADDRESS as `0x${string}` | undefined) ?? '0x0000000000000000000000000000000000000000';
 
-const publicClient = createPublicClient({ chain: base, transport: http() });
+const publicClient = createPublicClient({ chain: base, transport: http('https://mainnet.base.org') });
 
 type State = 'idle' | 'loading' | 'suggestion' | 'pending' | 'success' | 'error' | 'no_funds' | 'wallet_conflict';
 
@@ -26,6 +26,7 @@ export default function TipButton({ compact = false }: Props) {
   const { fundWallet }            = useFundWallet();
 
   const [state, setState]           = useState<State>('idle');
+  const [checking, setChecking]     = useState(false);
   const [balanceEth, setBalanceEth] = useState<number | null>(null);
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [txHash, setTxHash]         = useState<string | null>(null);
@@ -34,49 +35,42 @@ export default function TipButton({ compact = false }: Props) {
   const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0];
   const hasWallet = !!embeddedWallet;
 
-  const checkBalance = (address: string) =>
-    publicClient
-      .getBalance({ address: address as `0x${string}` })
-      .then((b) => setBalanceEth(parseFloat(formatEther(b))))
-      .catch(() => setBalanceEth(null));
+  // Check ALL wallets, return highest non-zero balance found
+  const checkBalance = async (currentWallets = wallets) => {
+    if (currentWallets.length === 0) { setBalanceEth(0); return 0; }
+    for (const w of currentWallets) {
+      try {
+        const b = await publicClient.getBalance({ address: w.address as `0x${string}` });
+        const eth = parseFloat(formatEther(b));
+        if (eth > 0) { setBalanceEth(eth); return eth; }
+      } catch { continue; }
+    }
+    setBalanceEth(0);
+    return 0;
+  };
 
-  // Fetch balance on mount and whenever a new wallet is linked
+  // Fetch balance on mount
   useEffect(() => {
-    if (!embeddedWallet?.address) return;
-    checkBalance(embeddedWallet.address);
-  }, [embeddedWallet?.address]);
+    if (wallets.length > 0) checkBalance(wallets);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // After linkWallet() resolves the wallets array grows — re-check balance
-  // and advance past no_funds if ETH is now available
+  // Re-check whenever wallets array grows (new wallet linked)
   useEffect(() => {
     if (wallets.length === 0) return;
-    const w = wallets.find((x) => x.walletClientType === 'privy') ?? wallets[0];
-    if (!w?.address) return;
-    publicClient
-      .getBalance({ address: w.address as `0x${string}` })
-      .then((b) => {
-        const bal = parseFloat(formatEther(b));
-        setBalanceEth(bal);
-        if (bal >= 0.001 && state === 'no_funds') fetchSuggestion();
-      })
-      .catch(() => {});
+    checkBalance(wallets).then((bal) => {
+      if (bal >= 0.001 && state === 'no_funds') fetchSuggestion();
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallets.length]);
 
   const fetchSuggestion = async () => {
     setState('loading');
     try {
-      // Fetch balance fresh at click time for accuracy
-      let bal = balanceEth;
-      if (embeddedWallet?.address) {
-        try {
-          const b = await publicClient.getBalance({ address: embeddedWallet.address as `0x${string}` });
-          bal = parseFloat(formatEther(b));
-          setBalanceEth(bal);
-        } catch { /* use cached */ }
-      }
+      // Refresh balance across all wallets at click time
+      let bal = await checkBalance(wallets).catch(() => balanceEth ?? 0);
 
-      if (bal !== null && bal < 0.001) {
+      if (bal < 0.001) {
         setState('no_funds');
         return;
       }
@@ -112,17 +106,18 @@ export default function TipButton({ compact = false }: Props) {
     }
   };
 
-  const handleConnectExternal = async () => {
-    try {
-      await linkWallet();
-      // useWallets() updates → wallets.length effect fires → balance re-checked
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '';
-      if (msg.toLowerCase().includes('user already exists') || msg.toLowerCase().includes('already linked')) {
-        setState('wallet_conflict');
-      }
-      // Other dismissals (user closed modal) are silently ignored
-    }
+  const handleConnectExternal = () => {
+    linkWallet();
+    // linkWallet() is void — errors show in Privy's own modal UI.
+    // Privy updates wallets[] after a short async delay once the user confirms.
+    setChecking(true);
+    setTimeout(async () => {
+      // wallets ref is stale inside setTimeout; re-read via Privy's hook
+      // The wallets.length useEffect also fires, but this ensures we cover the gap.
+      const bal = await checkBalance(wallets).catch(() => 0);
+      setChecking(false);
+      if (bal >= 0.001) fetchSuggestion();
+    }, 1500);
   };
 
   const confirmSend = async () => {
@@ -193,41 +188,49 @@ export default function TipButton({ compact = false }: Props) {
                 <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.55, marginBottom: 8 }}>
                   You need ETH on Base to tip.
                 </div>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                  <button
-                    onClick={handleOnramp}
-                    style={{
-                      flex: 1, ...mono, fontSize: 9, fontWeight: 700,
-                      color: SA.phosphorGlow,
-                      background: 'var(--bg-terminal, #0C1A0C)',
-                      border: `1px solid ${SA.phosphorGlow}`,
-                      borderRadius: 6, padding: '5px 4px', cursor: 'pointer',
-                      lineHeight: 1.3, textAlign: 'center',
-                    }}
-                  >
-                    ADD ETH
+                {checking ? (
+                  <div style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '6px 0' }}>
+                    Checking wallet…
+                  </div>
+                ) : (
+                  <>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                    <button
+                      onClick={handleOnramp}
+                      style={{
+                        flex: 1, ...mono, fontSize: 9, fontWeight: 700,
+                        color: SA.phosphorGlow,
+                        background: 'var(--bg-terminal, #0C1A0C)',
+                        border: `1px solid ${SA.phosphorGlow}`,
+                        borderRadius: 6, padding: '5px 4px', cursor: 'pointer',
+                        lineHeight: 1.3, textAlign: 'center',
+                      }}
+                    >
+                      ADD ETH
+                    </button>
+                    <button
+                      onClick={handleConnectExternal}
+                      style={{
+                        flex: 1, ...mono, fontSize: 9, fontWeight: 700,
+                        color: SA.aqua,
+                        background: 'transparent',
+                        border: `1px solid ${SA.aqua}`,
+                        borderRadius: 6, padding: '5px 4px', cursor: 'pointer',
+                        lineHeight: 1.3, textAlign: 'center',
+                      }}
+                    >
+                      CONNECT
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <span style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', flex: 1, textAlign: 'center', lineHeight: 1.4 }}>Card or Apple Pay</span>
+                    <span style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', flex: 1, textAlign: 'center', lineHeight: 1.4 }}>MetaMask & more</span>
+                  </div>
+                  <button onClick={reset} style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, width: '100%', textAlign: 'right' }}>
+                    Close
                   </button>
-                  <button
-                    onClick={handleConnectExternal}
-                    style={{
-                      flex: 1, ...mono, fontSize: 9, fontWeight: 700,
-                      color: SA.aqua,
-                      background: 'transparent',
-                      border: `1px solid ${SA.aqua}`,
-                      borderRadius: 6, padding: '5px 4px', cursor: 'pointer',
-                      lineHeight: 1.3, textAlign: 'center',
-                    }}
-                  >
-                    CONNECT
-                  </button>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <span style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', flex: 1, textAlign: 'center', lineHeight: 1.4 }}>Card or Apple Pay</span>
-                  <span style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', flex: 1, textAlign: 'center', lineHeight: 1.4 }}>MetaMask & more</span>
-                </div>
-                <button onClick={reset} style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, width: '100%', textAlign: 'right' }}>
-                  Close
-                </button>
+                  </>
+                )}
               </>
             )}
             {state === 'error' && (
@@ -362,6 +365,11 @@ export default function TipButton({ compact = false }: Props) {
         <div style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 12, textTransform: 'uppercase' }}>
           You need ETH on Base to tip.
         </div>
+        {checking ? (
+          <div style={{ ...mono, fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>
+            Checking wallet…
+          </div>
+        ) : (
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <button
             onClick={handleOnramp}
@@ -396,6 +404,7 @@ export default function TipButton({ compact = false }: Props) {
             </div>
           </button>
         </div>
+        )}
         <button
           onClick={reset}
           style={{

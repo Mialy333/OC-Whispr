@@ -5,6 +5,7 @@ export interface UserProfile {
   preferredAssets: ('stablecoin' | 'rwa' | 'defi' | 'staking')[];
   timeHorizon: 'short' | 'medium' | 'long';
   excludedProtocols?: string[];
+  signalContext?: string;
 }
 
 export interface YieldAdvice {

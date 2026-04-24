@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import sdk from '@farcaster/miniapp-sdk';
 import SignalCard from '@/components/SignalCard';
+import SignalDetail from '@/components/SignalDetail';
 import AdvisorFlow from '@/components/AdvisorFlow';
 import ProfileView from '@/components/ProfileView';
 import TerminalAnimation from '@/components/TerminalAnimation';
@@ -12,7 +13,7 @@ import { SA, StatusBar, Ticker } from '@/components/ui';
 import type { AlphaSignal } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
-type View      = 'feed' | 'advisor' | 'profile';
+type View      = 'feed' | 'detail' | 'advisor' | 'profile';
 type FilterKey = 'ALL' | 'HIGH' | 'BOOSTED';
 
 interface FeedResponse { free: AlphaSignal[]; locked: AlphaSignal[]; total: number; }
@@ -171,6 +172,7 @@ export default function FrameClient() {
   const [error, setError]               = useState('');
   const [view, setView]                 = useState<View>('feed');
   const [filter, setFilter]             = useState<FilterKey>('ALL');
+  const [selectedSignal, setSelectedSignal] = useState<AlphaSignal | null>(null);
 
   // Route directly to Advisor when arriving from a high-severity cast
   useEffect(() => {
@@ -374,6 +376,7 @@ export default function FrameClient() {
                 locked={lockedIds.has(signal.id)}
                 fid={fid ?? 0}
                 dark={dark}
+                onOpen={(s) => { setSelectedSignal(s); setView('detail'); }}
               />
             ))}
             {!feedLoading && filtered.length === 0 && !error && (
@@ -387,9 +390,15 @@ export default function FrameClient() {
               — END OF EDITION —
             </div>
           </div>
+        ) : view === 'detail' && selectedSignal ? (
+          <SignalDetail
+            signal={selectedSignal}
+            onBack={() => setView('feed')}
+            onAdvisor={() => setView('advisor')}
+          />
         ) : view === 'advisor' ? (
           <>
-            {castRef === 'cast' && castSeverity === 'high' && (
+            {castRef === 'cast' && castSeverity === 'high' && !selectedSignal && (
               <div style={{
                 margin: '10px 14px 0',
                 padding: '10px 12px',
@@ -405,7 +414,11 @@ export default function FrameClient() {
                 </div>
               </div>
             )}
-            <AdvisorFlow fid={fid ?? undefined} onBack={() => setView('feed')} />
+            <AdvisorFlow
+              fid={fid ?? undefined}
+              onBack={() => setView('feed')}
+              prefilledSignal={selectedSignal ?? undefined}
+            />
           </>
         ) : fid ? (
           <ProfileView fid={fid} />

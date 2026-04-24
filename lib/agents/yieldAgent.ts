@@ -22,8 +22,11 @@ export async function getYieldAdvice(profile: UserProfile): Promise<YieldAdvice[
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
 
-  const userMessage = `Profile: risk=${profile.riskTolerance}, capital=$${profile.capitalUsd.toLocaleString()}, assets=${profile.preferredAssets.join(',')}, horizon=${profile.timeHorizon}.
+  let userMessage = `Profile: risk=${profile.riskTolerance}, capital=$${profile.capitalUsd.toLocaleString()}, assets=${profile.preferredAssets.join(',')}, horizon=${profile.timeHorizon}.
 Recommend 3 yield strategies. Degen: max APY/leverage OK. Conservative: audited, stable, no leverage. Min $100M TVL.`;
+  if (profile.signalContext) {
+    userMessage += `\nThe user is interested in this signal: ${profile.signalContext}. Tailor strategies specifically relevant to this signal.`;
+  }
 
   const errors: string[] = [];
 

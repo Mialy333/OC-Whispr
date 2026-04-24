@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { SA, PButton } from '@/components/ui';
 import type { UserProfile, AdvisorResponse, YieldAdvice } from '@/types/advisor';
+import type { AlphaSignal } from '@/types';
 
 const mono  = { fontFamily: SA.mono  } as const;
 const serif = { fontFamily: SA.serif } as const;
 
 type RiskTolerance = UserProfile['riskTolerance'];
-type Asset = UserProfile['preferredAssets'][number];
 
 const RISK_OPTS: { label: string; value: RiskTolerance; desc: string }[] = [
   { label: 'Conservative', value: 'conservative', desc: 'Stable yields, low risk'  },
@@ -35,7 +35,21 @@ const RISK_COLOR: Record<YieldAdvice['riskLevel'], string> = {
   high:   SA.rust,
 };
 
-interface Props { fid?: number; onBack: () => void; }
+type Asset = UserProfile['preferredAssets'][number];
+
+function inferAssets(signal: AlphaSignal): Asset[] {
+  const id   = signal.protocolId.toLowerCase();
+  const name = signal.protocolName.toLowerCase();
+  if (id.includes('stable') || name.includes('stable') || id.includes('ethena') || id.includes('frax') || id.includes('usdc') || id.includes('usdt'))
+    return ['stablecoin'];
+  if (id.includes('rwa') || id.includes('ondo') || id.includes('maple') || id.includes('centrifuge') || name.includes('treasury') || name.includes('rwa'))
+    return ['rwa'];
+  if (id.includes('lido') || id.includes('rocket') || id.includes('staking') || name.includes('staking'))
+    return ['staking'];
+  return ['defi'];
+}
+
+interface Props { fid?: number; onBack: () => void; prefilledSignal?: AlphaSignal; }
 
 const LOADING_STEPS = [
   'Connecting to protocols…',
@@ -46,11 +60,11 @@ const LOADING_STEPS = [
   'Generating alpha…',
 ];
 
-export default function AdvisorFlow({ fid, onBack }: Props) {
+export default function AdvisorFlow({ fid, onBack, prefilledSignal }: Props) {
   const [step, setStep]       = useState<1 | 2 | 3>(1);
   const [risk, setRisk]       = useState<RiskTolerance | null>(null);
   const [capital, setCapital] = useState<number | null>(null);
-  const [assets, setAssets]   = useState<Asset[]>([]);
+  const [assets, setAssets]   = useState<Asset[]>(() => prefilledSignal ? inferAssets(prefilledSignal) : []);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [error, setError]     = useState<string | null>(null);
@@ -83,6 +97,9 @@ export default function AdvisorFlow({ fid, onBack }: Props) {
         capitalUsd:      capital,
         preferredAssets: assets,
         timeHorizon:     risk === 'conservative' ? 'long' : risk === 'moderate' ? 'medium' : 'short',
+        signalContext:   prefilledSignal
+          ? `${prefilledSignal.title} — ${prefilledSignal.dataPoint}`
+          : undefined,
       };
       const res = await fetch('/api/advisor', {
         method:  'POST',
@@ -175,6 +192,26 @@ export default function AdvisorFlow({ fid, onBack }: Props) {
   // ── Profile form ───────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '14px 14px 24px', background: 'var(--bg-primary)', minHeight: '100%' }}>
+      {/* Signal context banner */}
+      {prefilledSignal && (
+        <div style={{
+          border: `1px solid rgba(0,255,65,0.3)`,
+          borderRadius: 8,
+          padding: '9px 12px',
+          background: 'var(--bg-terminal, #0C1A0C)',
+          marginBottom: 14,
+        }}>
+          <div style={{ ...mono, fontSize: 8.5, color: SA.phosphorGlow, letterSpacing: 1, marginBottom: 3, textTransform: 'uppercase' }}>
+            Based on: {prefilledSignal.protocolName} signal
+          </div>
+          <div style={{ ...mono, fontSize: 10, color: SA.terminalGreen, lineHeight: 1.4 }}>
+            {prefilledSignal.title}
+          </div>
+          <div style={{ ...mono, fontSize: 9, color: SA.phosphorGlow, marginTop: 3, opacity: 0.8 }}>
+            {prefilledSignal.dataPoint}
+          </div>
+        </div>
+      )}
       {/* Back + progress */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <button onClick={onBack} style={{

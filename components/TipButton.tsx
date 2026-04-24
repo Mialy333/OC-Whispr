@@ -13,7 +13,7 @@ const DONATION_ADDRESS =
 
 const publicClient = createPublicClient({ chain: base, transport: http() });
 
-type State = 'idle' | 'loading' | 'suggestion' | 'pending' | 'success' | 'error' | 'no_funds';
+type State = 'idle' | 'loading' | 'suggestion' | 'pending' | 'success' | 'error' | 'no_funds' | 'wallet_conflict';
 
 interface Suggestion { amount: number; message: string; }
 interface Props { compact?: boolean; }
@@ -112,10 +112,17 @@ export default function TipButton({ compact = false }: Props) {
     }
   };
 
-  const handleConnectExternal = () => {
-    linkWallet();
-    // After linkWallet() resolves, useWallets() updates → wallets.length effect fires
-    // → balance re-checked → auto-advances if sufficient
+  const handleConnectExternal = async () => {
+    try {
+      await linkWallet();
+      // useWallets() updates → wallets.length effect fires → balance re-checked
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.toLowerCase().includes('user already exists') || msg.toLowerCase().includes('already linked')) {
+        setState('wallet_conflict');
+      }
+      // Other dismissals (user closed modal) are silently ignored
+    }
   };
 
   const confirmSend = async () => {
@@ -172,7 +179,7 @@ export default function TipButton({ compact = false }: Props) {
           {state === 'loading' ? '…' : '☕ TIP'}
         </button>
 
-        {(state === 'suggestion' || state === 'no_funds' || state === 'error') && (
+        {(state === 'suggestion' || state === 'no_funds' || state === 'error' || state === 'wallet_conflict') && (
           <div style={{
             position: 'absolute', top: 22, right: 0,
             background: 'var(--bg-secondary)',
@@ -227,6 +234,24 @@ export default function TipButton({ compact = false }: Props) {
               <>
                 <div style={{ ...mono, fontSize: 9, color: SA.rust, marginBottom: 6 }}>⚠ {errMsg}</div>
                 <button onClick={reset} style={{ ...mono, fontSize: 9, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Close</button>
+              </>
+            )}
+            {state === 'wallet_conflict' && (
+              <>
+                <div style={{ ...mono, fontSize: 9, color: SA.amber, lineHeight: 1.55, marginBottom: 6 }}>
+                  That address is linked to another account. Try a different wallet.
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => { setState('no_funds'); handleConnectExternal(); }}
+                    style={{ flex: 1, ...mono, fontSize: 9, color: SA.aqua, background: 'none', border: `1px solid ${SA.aqua}`, borderRadius: 5, padding: '4px 0', cursor: 'pointer' }}
+                  >
+                    Try again
+                  </button>
+                  <button onClick={reset} style={{ flex: 1, ...mono, fontSize: 9, color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border)', borderRadius: 5, padding: '4px 0', cursor: 'pointer' }}>
+                    Close
+                  </button>
+                </div>
               </>
             )}
             {state === 'suggestion' && suggestion && (
@@ -380,6 +405,43 @@ export default function TipButton({ compact = false }: Props) {
         >
           Cancel
         </button>
+      </div>
+    );
+  }
+
+  if (state === 'wallet_conflict') {
+    return (
+      <div style={{ border: `1px solid ${SA.amber}`, borderRadius: 12, padding: '14px', background: 'var(--bg-secondary)' }}>
+        <div style={{ ...mono, fontSize: 10, color: SA.amber, fontWeight: 700, marginBottom: 6 }}>
+          ⚠ Wallet already linked to another account
+        </div>
+        <div style={{ ...mono, fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 12 }}>
+          That address is registered with a different Privy account. Try connecting a different wallet instead.
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => { setState('no_funds'); handleConnectExternal(); }}
+            style={{
+              flex: 1, padding: '10px',
+              border: `1.5px solid ${SA.aqua}`, borderRadius: 10,
+              background: 'transparent', cursor: 'pointer',
+              ...mono, fontSize: 10, fontWeight: 700, color: SA.aqua,
+            }}
+          >
+            Try another wallet
+          </button>
+          <button
+            onClick={reset}
+            style={{
+              flex: 1, padding: '10px',
+              border: '1px solid var(--border)', borderRadius: 10,
+              background: 'transparent', cursor: 'pointer',
+              ...mono, fontSize: 10, color: 'var(--text-muted)',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     );
   }

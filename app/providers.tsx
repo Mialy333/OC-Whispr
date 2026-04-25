@@ -42,10 +42,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           supportedChains: [base],
           embeddedWallets: {
             createOnLogin: 'users-without-wallets',
+            requireUserPasswordOnCreate: false,
+          },
+          fundingMethodConfig: {
+            moonpay: { useSandbox: false },
           },
           appearance: {
-            theme: 'light',
-            accentColor: '#3E6FA8',
+            theme: 'dark',
+            accentColor: '#00FF41',
             logo: 'https://farhack2026.vercel.app/icon.png',
           },
         }}

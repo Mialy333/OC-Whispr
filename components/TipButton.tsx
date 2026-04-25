@@ -112,26 +112,48 @@ export default function TipButton({ compact = false }: Props) {
     fetchSuggestion();
   };
 
-  const handleOnramp = () => {
-    if (embeddedWallet?.address) {
-      fundWallet(embeddedWallet.address, { chain: base, asset: 'native-currency' });
-    } else {
-      connectOrCreateWallet();
+  const handleAddEth = async () => {
+    const addr = embeddedWallet?.address;
+    try {
+      if (addr) {
+        await fundWallet(addr, { chain: base, asset: 'native-currency' });
+      } else {
+        connectOrCreateWallet();
+      }
+    } catch {
+      // Fallback: Coinbase onramp in new tab
+      const dest = encodeURIComponent(JSON.stringify([{ address: addr ?? '', blockchains: ['base'] }]));
+      window.open(
+        `https://pay.coinbase.com/buy/select-asset?appId=alpha-whispr&destinationWallets=${dest}`,
+        '_blank',
+      );
     }
   };
 
-  const handleConnectExternal = () => {
-    linkWallet();
-    // linkWallet() is void — errors show in Privy's own modal UI.
-    // Privy updates wallets[] after a short async delay once the user confirms.
-    setChecking(true);
-    setTimeout(async () => {
-      // wallets ref is stale inside setTimeout; re-read via Privy's hook
-      // The wallets.length useEffect also fires, but this ensures we cover the gap.
-      const bal = await checkBalance(wallets).catch(() => 0);
-      setChecking(false);
-      if (bal >= 0.001) fetchSuggestion();
-    }, 1500);
+  const handleConnectWallet = async () => {
+    try {
+      if (embeddedWallet) {
+        // Embedded wallet exists — ensure it's on Base before any tx attempt
+        await embeddedWallet.switchChain(8453);
+        setChecking(true);
+        setTimeout(async () => {
+          const bal = await checkBalance(wallets).catch(() => 0);
+          setChecking(false);
+          if (bal >= 0.001) fetchSuggestion();
+        }, 1500);
+      } else {
+        // No embedded wallet — link an external one
+        linkWallet();
+        setChecking(true);
+        setTimeout(async () => {
+          const bal = await checkBalance(wallets).catch(() => 0);
+          setChecking(false);
+          if (bal >= 0.001) fetchSuggestion();
+        }, 2000);
+      }
+    } catch (e) {
+      console.error('Wallet connect error:', e);
+    }
   };
 
   const confirmSend = async () => {
@@ -210,7 +232,7 @@ export default function TipButton({ compact = false }: Props) {
                   <>
                   <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
                     <button
-                      onClick={handleOnramp}
+                      onClick={handleAddEth}
                       style={{
                         flex: 1, ...mono, fontSize: 9, fontWeight: 700,
                         color: SA.phosphorGlow,
@@ -223,7 +245,7 @@ export default function TipButton({ compact = false }: Props) {
                       ADD ETH
                     </button>
                     <button
-                      onClick={handleConnectExternal}
+                      onClick={handleConnectWallet}
                       style={{
                         flex: 1, ...mono, fontSize: 9, fontWeight: 700,
                         color: SA.aqua,
@@ -260,7 +282,7 @@ export default function TipButton({ compact = false }: Props) {
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button
-                    onClick={() => { setState('no_funds'); handleConnectExternal(); }}
+                    onClick={() => { setState('no_funds'); handleConnectWallet(); }}
                     style={{ flex: 1, ...mono, fontSize: 9, color: SA.aqua, background: 'none', border: `1px solid ${SA.aqua}`, borderRadius: 5, padding: '4px 0', cursor: 'pointer' }}
                   >
                     Try again
@@ -411,7 +433,7 @@ export default function TipButton({ compact = false }: Props) {
         ) : (
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <button
-            onClick={handleOnramp}
+            onClick={handleAddEth}
             style={{
               flex: 1, padding: '11px 8px',
               background: 'var(--bg-terminal, #0C1A0C)',
@@ -427,7 +449,7 @@ export default function TipButton({ compact = false }: Props) {
             </div>
           </button>
           <button
-            onClick={handleConnectExternal}
+            onClick={handleConnectWallet}
             style={{
               flex: 1, padding: '11px 8px',
               background: 'transparent',
@@ -468,7 +490,7 @@ export default function TipButton({ compact = false }: Props) {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            onClick={() => { setState('no_funds'); handleConnectExternal(); }}
+            onClick={() => { setState('no_funds'); handleConnectWallet(); }}
             style={{
               flex: 1, padding: '10px',
               border: `1.5px solid ${SA.aqua}`, borderRadius: 10,

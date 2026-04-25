@@ -34,7 +34,7 @@ interface Suggestion { amount: number; message: string; }
 interface Props { compact?: boolean; }
 
 export default function TipButton({ compact = false }: Props) {
-  const { linkWallet }            = usePrivy();
+  const { linkWallet, user, createWallet } = usePrivy();
   const { sendTransaction }       = useSendTransaction();
   const { wallets }               = useWallets();
   const { connectOrCreateWallet } = useConnectOrCreateWallet();
@@ -163,18 +163,29 @@ export default function TipButton({ compact = false }: Props) {
   const handleCreateWallet = async () => {
     setState('checking');
     try {
-      connectOrCreateWallet(); // opens Privy modal; wallets[] updates async
-      // Wait for user to complete wallet creation, then re-check
-      await new Promise((r) => setTimeout(r, 1500));
-      const addr = getWalletAddress();
-      if (addr) {
-        checkBalanceAndAdvance(addr);
-      } else {
-        // wallets.length effect will fire when Privy updates wallets[]
-        setState('checking');
+      // Check if a wallet already exists in the Privy account but hasn't synced to wallets[] yet
+      const existingWallet = user?.linkedAccounts?.find(
+        (a) => a.type === 'wallet' && 'chainType' in a && (a as { chainType?: string }).chainType === 'ethereum'
+      );
+
+      if (!existingWallet) {
+        // Truly no wallet — create one (silent, no modal)
+        await createWallet();
       }
+      // Whether we just created one or it already existed, wait for wallets[] to update
+      setTimeout(async () => {
+        const addr = getWalletAddress();
+        if (addr) await checkBalanceAndAdvance(addr);
+        else setState('no_balance');
+      }, 2000);
     } catch {
-      setState('no_balance');
+      // createWallet() failed (e.g. already exists) — fall back to modal flow
+      connectOrCreateWallet();
+      setTimeout(async () => {
+        const addr = getWalletAddress();
+        if (addr) await checkBalanceAndAdvance(addr);
+        else setState('no_balance');
+      }, 2000);
     }
   };
 

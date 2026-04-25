@@ -34,7 +34,7 @@ interface Suggestion { amount: number; message: string; }
 interface Props { compact?: boolean; }
 
 export default function TipButton({ compact = false }: Props) {
-  const { ready, authenticated, login, linkWallet, user, createWallet } = usePrivy();
+  const { ready, authenticated, login, linkWallet, createWallet } = usePrivy();
   const { sendTransaction }       = useSendTransaction();
   const { wallets }               = useWallets();
   const { connectOrCreateWallet } = useConnectOrCreateWallet();
@@ -166,10 +166,23 @@ export default function TipButton({ compact = false }: Props) {
       return;
     }
 
-    const address = getWalletAddress();
+    let address = getWalletAddress();
     if (!address) {
-      setState('create_wallet');
-      return;
+      // Auto-attempt silent creation before showing manual prompt
+      setState('checking');
+      try {
+        await createWallet();
+        await new Promise(r => setTimeout(r, 2000));
+        address = getWalletAddress();
+      } catch (e) {
+        console.log('[TipButton] createWallet:', e instanceof Error ? e.message : e);
+        await new Promise(r => setTimeout(r, 1000));
+        address = getWalletAddress();
+      }
+      if (!address) {
+        setState('create_wallet');
+        return;
+      }
     }
 
     if (suggestion && balanceEth && balanceEth >= 0.001) { setState('suggestion'); return; }

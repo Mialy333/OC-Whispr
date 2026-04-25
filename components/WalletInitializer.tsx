@@ -12,6 +12,8 @@ export default function WalletInitializer() {
     const hasEmbedded = wallets.some(w => w.walletClientType === 'privy');
     const hasLinkedWallet = user?.linkedAccounts?.some(a => a.type === 'wallet');
 
+    console.log('[WalletInit]', { ready, authenticated, walletsCount: wallets.length, hasEmbedded });
+
     if (!hasEmbedded && !hasLinkedWallet) {
       createWallet().catch(e => {
         console.log('Wallet init:', e.message);

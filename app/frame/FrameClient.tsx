@@ -178,6 +178,7 @@ export default function FrameClient() {
 
   const { ready: privyReady, authenticated, login, user } = usePrivy();
   const [dark, toggleDark] = useDark();
+  const [isLoading, setIsLoading] = useState(true);
   const [loginLoading, setLoginLoading] = useState(false);
   const [fid, setFid]                   = useState<number | null>(null);
   const [feed, setFeed]                 = useState<FeedResponse | null>(null);
@@ -211,9 +212,16 @@ export default function FrameClient() {
   const rule = dark ? '#332E22' : RULE;
 
   // Signal ready to Warpcast immediately — before any auth check
+  // Hard-cap loading at 2s so a hanging Privy init never blocks the UI
   useEffect(() => {
     sdk.actions.ready().catch(() => {});
+    const timeout = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(() => {
+    if (privyReady) setIsLoading(false);
+  }, [privyReady]);
 
   // Load feed after Privy auth resolves
   useEffect(() => {
@@ -270,8 +278,8 @@ export default function FrameClient() {
       )
     : baseFiltered;
 
-  // ── Privy initialising ──
-  if (!privyReady) {
+  // ── Loading (max 2s) ──
+  if (isLoading) {
     return (
       <div style={{ minHeight: '100vh', background: PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ fontFamily: SA.serif, fontSize: 20, fontStyle: 'italic', color: INK }}>Alpha Whispr</span>

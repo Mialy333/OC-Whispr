@@ -20,6 +20,7 @@ const publicClient = createPublicClient({ chain: base, transport: http('https://
 // ONRAMP_SUCCESS → SUGGESTION (via "TIP NOW →")
 type State =
   | 'idle'
+  | 'create_wallet'  // Farcaster user with no wallet yet
   | 'no_balance'
   | 'checking'       // "Checking wallet…" — max 5s
   | 'suggestion'     // AI suggestion card
@@ -39,16 +40,31 @@ export default function TipButton({ compact = false }: Props) {
   const { connectOrCreateWallet } = useConnectOrCreateWallet();
   const { fundWallet }            = useFundWallet();
 
-  const [state, setState]           = useState<State>('idle');
+  const [state, setStateRaw]        = useState<State>('idle');
+  const setState = (s: State | ((prev: State) => State)) => {
+    setStateRaw((prev) => {
+      const next = typeof s === 'function' ? s(prev) : s;
+      stateRef.current = next;
+      return next;
+    });
+  };
   const [balanceEth, setBalanceEth] = useState<number | null>(null);
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [txHash, setTxHash]         = useState<string | null>(null);
   const [errMsg, setErrMsg]         = useState<string | null>(null);
 
   const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stateRef      = useRef<State>('idle');
 
   const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0];
-  const hasWallet = !!embeddedWallet;
+
+  // Priority: embedded → external → null (no wallet at all, e.g. Farcaster-only auth)
+  const getWalletAddress = (): string | null => {
+    const embedded = wallets.find((w) => w.walletClientType === 'privy');
+    if (embedded) return embedded.address;
+    if (wallets[0]) return wallets[0].address;
+    return null;
+  };
 
   // ── Balance check (reads all wallets, returns highest) ────────────────────
   const checkBalance = async (currentWallets = wallets): Promise<number> => {
@@ -81,14 +97,22 @@ export default function TipButton({ compact = false }: Props) {
   };
 
   // ── Check balance then advance — with 5s timeout ──────────────────────────
-  const checkBalanceAndAdvance = async () => {
+  // addr: check a specific address directly (faster); falls back to all wallets
+  const checkBalanceAndAdvance = async (addr?: string) => {
     setState('checking');
     if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
     checkTimerRef.current = setTimeout(() => {
       setState((s) => s === 'checking' ? 'no_balance' : s);
     }, 5000);
     try {
-      const bal = await checkBalance(wallets);
+      let bal: number;
+      if (addr) {
+        const raw = await publicClient.getBalance({ address: addr as `0x${string}` });
+        bal = parseFloat(formatEther(raw));
+        setBalanceEth(bal);
+      } else {
+        bal = await checkBalance(wallets);
+      }
       if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
       if (bal >= 0.001) {
         await fetchSuggestion(bal);
@@ -118,11 +142,40 @@ export default function TipButton({ compact = false }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // When a new wallet appears, re-check balance if we're in a waiting state
+  useEffect(() => {
+    if (wallets.length === 0) return;
+    if (stateRef.current === 'create_wallet' || stateRef.current === 'checking') {
+      const addr = wallets.find((w) => w.walletClientType === 'privy')?.address ?? wallets[0]?.address;
+      checkBalanceAndAdvance(addr);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallets.length]);
+
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const handleClick = () => {
-    if (!hasWallet) { setState('no_balance'); return; }
+  const handleTipClick = () => {
+    const addr = getWalletAddress();
+    if (!addr) { setState('create_wallet'); return; }
     if (suggestion && balanceEth && balanceEth >= 0.001) { setState('suggestion'); return; }
-    checkBalanceAndAdvance();
+    checkBalanceAndAdvance(addr);
+  };
+
+  const handleCreateWallet = async () => {
+    setState('checking');
+    try {
+      connectOrCreateWallet(); // opens Privy modal; wallets[] updates async
+      // Wait for user to complete wallet creation, then re-check
+      await new Promise((r) => setTimeout(r, 1500));
+      const addr = getWalletAddress();
+      if (addr) {
+        checkBalanceAndAdvance(addr);
+      } else {
+        // wallets.length effect will fire when Privy updates wallets[]
+        setState('checking');
+      }
+    } catch {
+      setState('no_balance');
+    }
   };
 
   const handleAddEth = async () => {
@@ -191,12 +244,12 @@ export default function TipButton({ compact = false }: Props) {
       return <span style={{ ...mono, fontSize: 9, color: SA.phosphorGlow }}>✓</span>;
     }
 
-    const dropdownOpen = state === 'suggestion' || state === 'no_balance' || state === 'onramp_success' || state === 'error' || state === 'wallet_conflict';
+    const dropdownOpen = state === 'suggestion' || state === 'no_balance' || state === 'create_wallet' || state === 'onramp_success' || state === 'error' || state === 'wallet_conflict';
 
     return (
       <div style={{ position: 'relative' }}>
         <button
-          onClick={state === 'suggestion' ? reset : handleClick}
+          onClick={state === 'suggestion' ? reset : handleTipClick}
           style={{
             ...mono, fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase',
             color: state === 'suggestion' ? SA.amber : state === 'onramp_success' ? SA.phosphorGlow : 'var(--text-muted)',
@@ -241,6 +294,24 @@ export default function TipButton({ compact = false }: Props) {
                 </div>
                 <button onClick={reset} style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'right' }}>
                   Close
+                </button>
+              </>
+            )}
+            {state === 'create_wallet' && (
+              <>
+                <div style={{ ...mono, fontSize: 9, color: SA.phosphorGlow, fontWeight: 700, marginBottom: 4 }}>
+                  Create your Base wallet to tip 🔑
+                </div>
+                <div style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
+                  Takes 5 seconds. No seed phrase needed.
+                </div>
+                <button onClick={handleCreateWallet} style={{
+                  width: '100%', ...mono, fontSize: 9, fontWeight: 700, color: SA.phosphorGlow,
+                  background: 'var(--bg-terminal, #0C1A0C)', border: `1px solid ${SA.phosphorGlow}`,
+                  borderRadius: 6, padding: '5px 0', cursor: 'pointer', marginBottom: 5,
+                }}>CREATE WALLET</button>
+                <button onClick={reset} style={{ ...mono, fontSize: 8, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'center' }}>
+                  Maybe later
                 </button>
               </>
             )}
@@ -490,6 +561,36 @@ export default function TipButton({ compact = false }: Props) {
     );
   }
 
+  if (state === 'create_wallet') {
+    return (
+      <div style={{
+        border: '1px solid rgba(0,255,65,0.2)', borderRadius: 12,
+        padding: '16px', background: 'var(--bg-terminal, #0C1A0C)',
+      }}>
+        <div style={{ ...mono, fontSize: 12, color: SA.phosphorGlow, fontWeight: 700, letterSpacing: 0.5, marginBottom: 6 }}>
+          Create your Base wallet to tip 🔑
+        </div>
+        <div style={{ ...mono, fontSize: 11, color: SA.terminalGreen, lineHeight: 1.55, marginBottom: 16 }}>
+          Takes 5 seconds. No seed phrase needed.
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleCreateWallet} style={{
+            flex: 1, padding: '11px',
+            background: 'transparent', border: `1.5px solid ${SA.phosphorGlow}`,
+            borderRadius: 10, cursor: 'pointer',
+            ...mono, fontSize: 11, fontWeight: 700, color: SA.phosphorGlow, letterSpacing: 0.5,
+          }}>CREATE WALLET</button>
+          <button onClick={reset} style={{
+            flex: 1, padding: '11px',
+            background: 'transparent', border: '1px solid var(--border)',
+            borderRadius: 10, cursor: 'pointer',
+            ...mono, fontSize: 11, color: 'var(--text-muted)',
+          }}>MAYBE LATER</button>
+        </div>
+      </div>
+    );
+  }
+
   if (state === 'suggestion' && suggestion) {
     return (
       <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
@@ -530,7 +631,7 @@ export default function TipButton({ compact = false }: Props) {
 
   // idle — main CTA
   return (
-    <button onClick={handleClick} style={{
+    <button onClick={handleTipClick} style={{
       width: '100%', padding: '11px',
       border: `1.5px solid ${SA.amber}`, background: 'transparent',
       borderRadius: 12, cursor: 'pointer',

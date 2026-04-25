@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { base } from 'viem/chains';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import WalletInitializer from '@/components/WalletInitializer';
 
 const PRIVY_APP_ID = 'cmnx9n2cd00210cl536akk4pe';
 
@@ -41,8 +42,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           defaultChain: base,
           supportedChains: [base],
           embeddedWallets: {
-            createOnLogin: 'users-without-wallets',
+            createOnLogin: 'all-users',
             requireUserPasswordOnCreate: false,
+            showWalletUIs: false,
           },
           fundingMethodConfig: {
             moonpay: { useSandbox: false },
@@ -54,6 +56,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           },
         }}
       >
+        <WalletInitializer />
         {children}
       </PrivyProvider>
     </ErrorBoundary>

@@ -49,9 +49,22 @@ export default function TipButton({ compact = false }: Props) {
     return 0;
   };
 
-  // Fetch balance on mount
+  const prefetchSuggestion = async (bal: number) => {
+    if (bal < 0.001) return;
+    try {
+      const res = await fetch(`/api/tip-suggest?balance=${bal.toFixed(6)}`);
+      const data = await res.json() as { amount?: number; message?: string; error?: string };
+      if (!data.error) {
+        setSuggestion({ amount: data.amount ?? 0.002, message: data.message ?? 'About the price of a coffee ☕' });
+      }
+    } catch { /* silent pre-fetch failure */ }
+  };
+
+  // Fetch balance on mount; silently pre-fetch suggestion if funded
   useEffect(() => {
-    if (wallets.length > 0) checkBalance(wallets);
+    if (wallets.length > 0) {
+      checkBalance(wallets).then((bal) => { if (bal >= 0.001) prefetchSuggestion(bal); });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -95,6 +108,7 @@ export default function TipButton({ compact = false }: Props) {
 
   const handleClick = () => {
     if (!hasWallet) { setState('no_funds'); return; }
+    if (suggestion) { setState('suggestion'); return; }
     fetchSuggestion();
   };
 
@@ -171,7 +185,7 @@ export default function TipButton({ compact = false }: Props) {
             opacity: state === 'loading' ? 0.5 : 1,
           }}
         >
-          {state === 'loading' ? '…' : '☕ TIP'}
+          {state === 'loading' ? '…' : suggestion ? `☕ TIP ${suggestion.amount}Ξ` : '☕ TIP'}
         </button>
 
         {(state === 'suggestion' || state === 'no_funds' || state === 'error' || state === 'wallet_conflict') && (
@@ -314,22 +328,47 @@ export default function TipButton({ compact = false }: Props) {
   if (state === 'success') {
     return (
       <div style={{
-        border: `1px solid ${SA.phosphorGlow}`, borderRadius: 12,
-        padding: '14px', background: 'var(--bg-terminal, #0C1A0C)',
-        textAlign: 'center',
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: '#050E05',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '32px 24px', textAlign: 'center',
       }}>
-        <div style={{ ...mono, fontSize: 12, color: SA.phosphorGlow, fontWeight: 700, marginBottom: 6 }}>
-          ✓ Sent! Thank you 🎉
+        <div style={{ ...mono, fontSize: 72, color: SA.phosphorGlow, lineHeight: 1, marginBottom: 20 }}>✓</div>
+        <div style={{ ...mono, fontSize: 22, color: SA.phosphorGlow, fontWeight: 700, letterSpacing: 2, marginBottom: 10 }}>
+          SENT!
+        </div>
+        <div style={{ ...mono, fontSize: 12, color: SA.terminalGreen, lineHeight: 1.6, marginBottom: 28, maxWidth: 280 }}>
+          Thank you for supporting Alpha Whispr
         </div>
         {txHash && (
           <a
             href={`https://basescan.org/tx/${txHash}`}
             target="_blank" rel="noreferrer"
-            style={{ ...mono, fontSize: 9, color: SA.aqua, textDecoration: 'none', wordBreak: 'break-all' }}
+            style={{
+              ...mono, fontSize: 9, color: SA.aqua,
+              textDecoration: 'none', wordBreak: 'break-all',
+              marginBottom: 32, maxWidth: 300, display: 'block',
+              border: `1px solid rgba(62,111,168,0.3)`,
+              borderRadius: 8, padding: '8px 12px',
+            }}
           >
             View on BaseScan →
           </a>
         )}
+        <button
+          onClick={reset}
+          style={{
+            ...mono, fontSize: 11, fontWeight: 700, letterSpacing: 1,
+            color: SA.phosphorGlow,
+            background: 'transparent',
+            border: `1.5px solid ${SA.phosphorGlow}`,
+            borderRadius: 12, padding: '12px 32px',
+            cursor: 'pointer',
+          }}
+        >
+          BACK TO FEED
+        </button>
       </div>
     );
   }

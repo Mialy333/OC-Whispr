@@ -18,6 +18,18 @@ type View      = 'feed' | 'detail' | 'advisor' | 'profile';
 type FilterKey = 'ALL' | 'HIGH' | 'BOOSTED';
 
 interface FeedResponse { free: AlphaSignal[]; locked: AlphaSignal[]; total: number; }
+interface AgentStatusData { lastPublished: string | null; totalPublished: number; }
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60_000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 // ── Tokens (hardcoded — CSS vars unreliable in Warpcast webview) ───────────
 const PAPER   = '#F2ECDF';
@@ -174,6 +186,7 @@ export default function FrameClient() {
   const [view, setView]                 = useState<View>('feed');
   const [filter, setFilter]             = useState<FilterKey>('ALL');
   const [selectedSignal, setSelectedSignal] = useState<AlphaSignal | null>(null);
+  const [agentStatus, setAgentStatus]   = useState<AgentStatusData | null>(null);
 
   // Route directly to Advisor when arriving from a high-severity cast
   useEffect(() => {
@@ -181,6 +194,15 @@ export default function FrameClient() {
       setView('advisor');
     }
   }, [castRef, castSeverity]);
+
+  // Fetch agent status once authenticated
+  useEffect(() => {
+    if (!authenticated) return;
+    fetch('/api/agent/status')
+      .then((r) => r.json())
+      .then(setAgentStatus)
+      .catch(() => {});
+  }, [authenticated]);
 
   const bg   = dark ? INK    : PAPER;
   const bg2  = dark ? '#1F1B15' : PAPER_D;
@@ -325,6 +347,24 @@ export default function FrameClient() {
           </button>
         </div>
       </div>
+
+      {/* 2b. Agent activity bar — only on feed view */}
+      {view === 'feed' && agentStatus && (
+        <div style={{
+          flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '3px 14px',
+          background: 'rgba(0,255,65,0.05)',
+          borderBottom: `0.5px solid ${rule}`,
+        }}>
+          <span style={{ fontFamily: SA.mono, fontSize: 7.5, color: SA.phosphorGlow, letterSpacing: 0.8, fontWeight: 700 }}>
+            AGENT
+          </span>
+          <span style={{ fontFamily: SA.mono, fontSize: 8, color: SA.terminalGreen, letterSpacing: 0.3, opacity: 0.85 }}>
+            {agentStatus.totalPublished} signals · last {timeAgo(agentStatus.lastPublished)}
+          </span>
+        </div>
+      )}
 
       {/* 3a. Terminal animation — only on feed view, above filter tabs */}
       {view === 'feed' && <TerminalAnimation fid={fid} />}

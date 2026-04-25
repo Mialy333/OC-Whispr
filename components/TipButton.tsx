@@ -34,7 +34,7 @@ interface Suggestion { amount: number; message: string; }
 interface Props { compact?: boolean; }
 
 export default function TipButton({ compact = false }: Props) {
-  const { linkWallet, user, createWallet } = usePrivy();
+  const { ready, authenticated, login, linkWallet, user, createWallet } = usePrivy();
   const { sendTransaction }       = useSendTransaction();
   const { wallets }               = useWallets();
   const { connectOrCreateWallet } = useConnectOrCreateWallet();
@@ -60,10 +60,15 @@ export default function TipButton({ compact = false }: Props) {
 
   // Priority: embedded → external → null (no wallet at all, e.g. Farcaster-only auth)
   const getWalletAddress = (): string | null => {
-    const embedded = wallets.find((w) => w.walletClientType === 'privy');
-    if (embedded) return embedded.address;
-    if (wallets[0]) return wallets[0].address;
-    return null;
+    try {
+      if (!ready) return null;
+      const embedded = wallets.find((w) => w.walletClientType === 'privy');
+      if (embedded?.address) return embedded.address;
+      if (wallets[0]?.address) return wallets[0].address;
+      return null;
+    } catch (e) {
+      return null;
+    }
   };
 
   // ── Balance check (reads all wallets, returns highest) ────────────────────
@@ -153,39 +158,39 @@ export default function TipButton({ compact = false }: Props) {
   }, [wallets.length]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const handleTipClick = () => {
-    const addr = getWalletAddress();
-    if (!addr) { setState('create_wallet'); return; }
+  const handleTipClick = async () => {
+    if (!ready) return;
+
+    if (!authenticated) {
+      login();
+      return;
+    }
+
+    const address = getWalletAddress();
+    if (!address) {
+      setState('create_wallet');
+      return;
+    }
+
     if (suggestion && balanceEth && balanceEth >= 0.001) { setState('suggestion'); return; }
-    checkBalanceAndAdvance(addr);
+    setState('checking');
+    await checkBalanceAndAdvance(address);
   };
 
   const handleCreateWallet = async () => {
-    setState('checking');
     try {
-      // Check if a wallet already exists in the Privy account but hasn't synced to wallets[] yet
-      const existingWallet = user?.linkedAccounts?.find(
-        (a) => a.type === 'wallet' && 'chainType' in a && (a as { chainType?: string }).chainType === 'ethereum'
-      );
-
-      if (!existingWallet) {
-        // Truly no wallet — create one (silent, no modal)
-        await createWallet();
+      setState('checking');
+      await createWallet();
+      await new Promise((r) => setTimeout(r, 2000));
+      const address = getWalletAddress();
+      if (address) {
+        await checkBalanceAndAdvance(address);
+      } else {
+        setState('no_balance');
       }
-      // Whether we just created one or it already existed, wait for wallets[] to update
-      setTimeout(async () => {
-        const addr = getWalletAddress();
-        if (addr) await checkBalanceAndAdvance(addr);
-        else setState('no_balance');
-      }, 2000);
-    } catch {
-      // createWallet() failed (e.g. already exists) — fall back to modal flow
-      connectOrCreateWallet();
-      setTimeout(async () => {
-        const addr = getWalletAddress();
-        if (addr) await checkBalanceAndAdvance(addr);
-        else setState('no_balance');
-      }, 2000);
+    } catch (e) {
+      console.error('createWallet error:', e);
+      setState('no_balance');
     }
   };
 
@@ -208,16 +213,19 @@ export default function TipButton({ compact = false }: Props) {
 
   const handleConnectWallet = async () => {
     try {
-      if (embeddedWallet) {
-        await embeddedWallet.switchChain(8453);
-      } else {
-        linkWallet(); // void — opens Privy modal, wallets[] updates asynchronously
-        // Wait for user to complete wallet link before balance check
+      linkWallet();
+      await new Promise((r) => setTimeout(r, 2500));
+      const address = getWalletAddress();
+      if (address) {
         setState('checking');
-        await new Promise((r) => setTimeout(r, 2000));
+        await checkBalanceAndAdvance(address);
+      } else {
+        setState('no_balance');
       }
-    } catch { /* ignore switchChain failures — still try to proceed */ }
-    checkBalanceAndAdvance();
+    } catch (e) {
+      console.error('linkWallet error:', e);
+      setState('no_balance');
+    }
   };
 
   const confirmSend = async () => {

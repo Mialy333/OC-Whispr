@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
             value: [
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org",
               "frame-src 'self' https://auth.privy.io https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org",
-              "connect-src 'self' https://*.privy.io https://api.privy.io wss://*.walletconnect.com wss://*.walletconnect.org https://*.walletconnect.com https://*.walletconnect.org https://api.llama.fi https://openrouter.ai https://api.neynar.com",
+              "connect-src 'self' https://mainnet.base.org https://*.base.org https://api.mainnet.base.org https://*.privy.io https://api.privy.io wss://*.walletconnect.com wss://*.walletconnect.org https://*.walletconnect.com https://*.walletconnect.org https://api.llama.fi https://openrouter.ai https://api.neynar.com https://api.coingecko.com",
               "img-src 'self' data: https: blob:",
             ].join('; '),
           },

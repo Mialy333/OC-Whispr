@@ -66,18 +66,28 @@ export default function SignalCard({ signal, locked, fid: _fid, dark = false, on
       </div>
 
       {/* Data chip + sparkline */}
+      {signal.severity === 'high' && !locked && (
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes aw-dp-pulse { 0%,100% { box-shadow: 0 0 4px rgba(0,255,65,0.25); } 50% { box-shadow: 0 0 12px rgba(0,255,65,0.7), 0 0 24px rgba(0,255,65,0.3); } }` }} />
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
         <span style={{
-          fontFamily: SA.mono, fontSize: 10, letterSpacing: 0.5,
+          fontFamily: SA.mono, fontSize: 15, letterSpacing: 0.5,
           background: dark ? '#0C1A0C' : SA.terminal,
           color: SA.terminalGreen,
-          padding: '2px 7px',
+          padding: '3px 10px',
           filter: locked ? 'blur(4px)' : 'none',
           transition: 'filter .4s',
+          animation: signal.severity === 'high' && !locked ? 'aw-dp-pulse 2s ease-in-out infinite' : 'none',
+          borderRadius: 2,
         }}>
           {locked ? '██████ ██.█%' : signal.dataPoint}
         </span>
         <Sparkline data={chart} w={64} h={18} color={SA.phosphorGlow} />
+        {!locked && (
+          <span style={{ fontFamily: SA.mono, fontSize: 8, color: muted, letterSpacing: 0.4, opacity: 0.75 }}>
+            via {signal.source}
+          </span>
+        )}
       </div>
 
       {/* Premium locked state */}

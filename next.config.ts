@@ -1,15 +1,9 @@
 import type { NextConfig } from 'next';
 
+// CSP is set per-route in middleware.ts so /frame can use frame-ancestors *
 const nextConfig: NextConfig = {
   async headers() {
     return [
-      {
-        source: '/frame',
-        headers: [
-          { key: 'X-Frame-Options', value: 'ALLOWALL' },
-          { key: 'Content-Security-Policy', value: "frame-ancestors *;" },
-        ],
-      },
       {
         source: '/.well-known/farcaster.json',
         headers: [
@@ -20,15 +14,6 @@ const nextConfig: NextConfig = {
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org",
-              "frame-src 'self' https://auth.privy.io https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org",
-              "connect-src 'self' https://*.privy.io https://api.privy.io wss://*.walletconnect.com wss://*.walletconnect.org https://*.walletconnect.com https://*.walletconnect.org https://api.llama.fi https://openrouter.ai https://api.neynar.com",
-              "img-src 'self' data: https: blob:",
-            ].join('; '),
-          },
           {
             key: 'Permissions-Policy',
             value: 'fullscreen=(self "https://auth.privy.io"), camera=(), microphone=()',

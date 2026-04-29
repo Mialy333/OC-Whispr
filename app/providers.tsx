@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { PrivyProvider } from '@privy-io/react-auth';
+import { base } from 'viem/chains';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import WalletInitializer from '@/components/WalletInitializer';
 
 const PRIVY_APP_ID = 'cmnx9n2cd00210cl536akk4pe';
 
@@ -37,13 +39,24 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         appId={PRIVY_APP_ID}
         config={{
           loginMethods: ['farcaster', 'wallet'],
+          defaultChain: base,
+          supportedChains: [base],
+          embeddedWallets: {
+            createOnLogin: 'all-users',
+            requireUserPasswordOnCreate: false,
+            showWalletUIs: false,
+          },
+          fundingMethodConfig: {
+            moonpay: { useSandbox: false },
+          },
           appearance: {
-            theme: 'light',
-            accentColor: '#3E6FA8',
+            theme: 'dark',
+            accentColor: '#00FF41',
             logo: 'https://farhack2026.vercel.app/icon.png',
           },
         }}
       >
+        <WalletInitializer />
         {children}
       </PrivyProvider>
     </ErrorBoundary>
